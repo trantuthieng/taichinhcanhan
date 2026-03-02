@@ -8,26 +8,28 @@ from datetime import datetime, date
 import pandas as pd
 from sqlalchemy import func, cast, Date, String
 
-from db.database import get_session, active_database_url
+from db.database import get_session, get_active_database_url
 from models.transaction import Transaction
 from models.account import Account
 from models.category import Category, SubCategory
 
 logger = logging.getLogger(__name__)
 
-_is_postgres = active_database_url.startswith("postgresql")
+
+def _is_pg():
+    return get_active_database_url().startswith("postgresql")
 
 
 def _month_label(col):
     """Return a cross-DB 'YYYY-MM' expression."""
-    if _is_postgres:
+    if _is_pg():
         return func.to_char(col, 'YYYY-MM').label("month")
     return func.strftime("%Y-%m", col).label("month")
 
 
 def _date_label(col):
     """Return a cross-DB date-only expression."""
-    if _is_postgres:
+    if _is_pg():
         return cast(col, Date).label("day")
     return func.date(col).label("day")
 
