@@ -109,6 +109,35 @@ config.py               # Settings
 | Data | pandas |
 | Export | openpyxl, xlsxwriter |
 
+## Deploy lên Streamlit Community Cloud
+
+1. Push code lên GitHub (đã xong với repo này).
+2. Vào https://share.streamlit.io và đăng nhập bằng GitHub.
+3. Chọn **New app**:
+	- Repository: `trantuthieng/taichinhcanhan`
+	- Branch: `main`
+	- Main file path: `app.py`
+4. Nhấn **Deploy**.
+
+### Cấu hình Secrets trên Streamlit Cloud
+
+Trong app settings → **Secrets**, thêm nội dung (điều chỉnh theo nhu cầu):
+
+```toml
+DATABASE_URL = "sqlite:///finance.db"
+ADMIN_USERNAME = "admin"
+ADMIN_PASSWORD = "admin123"
+ADMIN_FULLNAME = "Quản trị viên"
+VNAPPMOB_BASE_URL = "https://appmob.vn/api"
+VCB_EXCHANGE_URL = "https://portal.vietcombank.com.vn/Usercontrols/TVPortal.TyGia/pXML.aspx"
+```
+
+### Lưu ý khi chạy trên Cloud
+
+- File SQLite trên Streamlit Cloud là dạng tạm thời theo container; dữ liệu có thể mất khi app restart/redeploy.
+- Nếu cần dữ liệu bền vững, nên chuyển `DATABASE_URL` sang PostgreSQL/MySQL.
+- Không commit file `.env`, `finance.db` hoặc `backups/` (đã được ignore trong `.gitignore`).
+
 ## License
 
 MIT
