@@ -6,13 +6,30 @@ from typing import Optional
 from datetime import datetime, date
 
 import pandas as pd
+from sqlalchemy import func, cast, Date, String
 
-from db.database import get_session
+from db.database import get_session, active_database_url
 from models.transaction import Transaction
 from models.account import Account
 from models.category import Category, SubCategory
 
 logger = logging.getLogger(__name__)
+
+_is_postgres = active_database_url.startswith("postgresql")
+
+
+def _month_label(col):
+    """Return a cross-DB 'YYYY-MM' expression."""
+    if _is_postgres:
+        return func.to_char(col, 'YYYY-MM').label("month")
+    return func.strftime("%Y-%m", col).label("month")
+
+
+def _date_label(col):
+    """Return a cross-DB date-only expression."""
+    if _is_postgres:
+        return cast(col, Date).label("day")
+    return func.date(col).label("day")
 
 
 class ReportService:
@@ -23,7 +40,6 @@ class ReportService:
         """Thu nhập / Chi tiêu trong khoảng thời gian."""
         session = get_session()
         try:
-            from sqlalchemy import func
             rows = (
                 session.query(Transaction.type, func.sum(Transaction.amount))
                 .filter(
@@ -49,7 +65,6 @@ class ReportService:
         """Chi tiêu nhóm theo danh mục."""
         session = get_session()
         try:
-            from sqlalchemy import func
             rows = (
                 session.query(
                     Category.name,
@@ -78,7 +93,6 @@ class ReportService:
         """Chi tiêu nhóm theo danh mục con."""
         session = get_session()
         try:
-            from sqlalchemy import func
             rows = (
                 session.query(
                     Category.name.label("cat"),
@@ -108,14 +122,14 @@ class ReportService:
         """Xu hướng thu chi 12 tháng gần nhất."""
         session = get_session()
         try:
-            from sqlalchemy import func
             from dateutil.relativedelta import relativedelta
             end = datetime.now()
             start = end - relativedelta(months=months)
 
+            month_col = _month_label(Transaction.transaction_date)
             rows = (
                 session.query(
-                    func.strftime("%Y-%m", Transaction.transaction_date).label("month"),
+                    month_col,
                     Transaction.type,
                     func.sum(Transaction.amount).label("total"),
                 )
@@ -125,8 +139,8 @@ class ReportService:
                     Transaction.status == "completed",
                     Transaction.transaction_date >= start,
                 )
-                .group_by("month", Transaction.type)
-                .order_by("month")
+                .group_by(month_col, Transaction.type)
+                .order_by(month_col)
                 .all()
             )
 
@@ -149,10 +163,10 @@ class ReportService:
         """Chi tiêu theo ngày."""
         session = get_session()
         try:
-            from sqlalchemy import func
+            day_col = _date_label(Transaction.transaction_date)
             rows = (
                 session.query(
-                    func.date(Transaction.transaction_date).label("day"),
+                    day_col,
                     func.sum(Transaction.amount).label("total"),
                 )
                 .filter(
@@ -163,8 +177,8 @@ class ReportService:
                     Transaction.transaction_date >= start,
                     Transaction.transaction_date < end,
                 )
-                .group_by("day")
-                .order_by("day")
+                .group_by(day_col)
+                .order_by(day_col)
                 .all()
             )
             return [{"date": r[0], "total": float(r[1])} for r in rows]

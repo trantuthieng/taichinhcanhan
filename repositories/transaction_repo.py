@@ -6,6 +6,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, and_
 from models.transaction import Transaction
 from repositories.base import BaseRepository
+from db.database import active_database_url
+
+_is_postgres = active_database_url.startswith("postgresql")
 
 
 class TransactionRepository(BaseRepository[Transaction]):
@@ -109,9 +112,15 @@ class TransactionRepository(BaseRepository[Transaction]):
 
         now = datetime.utcnow()
         start = datetime(now.year, now.month, 1) - timedelta(days=months * 31)
+
+        if _is_postgres:
+            month_col = func.to_char(Transaction.transaction_date, 'YYYY-MM').label("month")
+        else:
+            month_col = func.strftime("%Y-%m", Transaction.transaction_date).label("month")
+
         rows = (
             self.session.query(
-                func.strftime("%Y-%m", Transaction.transaction_date).label("month"),
+                month_col,
                 Transaction.type,
                 func.sum(Transaction.amount),
             )
@@ -122,8 +131,8 @@ class TransactionRepository(BaseRepository[Transaction]):
                 Transaction.transaction_date >= start,
                 Transaction.type.in_(["income", "expense"]),
             )
-            .group_by("month", Transaction.type)
-            .order_by("month")
+            .group_by(month_col, Transaction.type)
+            .order_by(month_col)
             .all()
         )
         return rows
