@@ -21,8 +21,8 @@ class Settings:
     DATABASE_URL: str = os.getenv("DATABASE_URL", f"sqlite:///{DATA_DIR / 'finance.db'}")
 
     # Admin defaults
-    ADMIN_USERNAME: str = os.getenv("ADMIN_USERNAME", "admin")
-    ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "admin123")
+    ADMIN_USERNAME: str = os.getenv("ADMIN_USERNAME", "bibibunbo")
+    ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "pony")
     ADMIN_DISPLAY_NAME: str = os.getenv("ADMIN_DISPLAY_NAME", "Quản trị viên")
 
     # Security

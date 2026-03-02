@@ -53,8 +53,8 @@ streamlit run app.py
 
 ## Tài khoản mặc định
 
-- **Username**: admin
-- **Password**: admin123
+- **Username**: bibibunbo
+- **Password**: pony
 
 ## Cấu hình
 
@@ -65,8 +65,8 @@ Chỉnh sửa file `.env`:
 DATABASE_URL=sqlite:///finance.db
 
 # Admin mặc định
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=admin123
+ADMIN_USERNAME=bibibunbo
+ADMIN_PASSWORD=pony
 ADMIN_FULLNAME=Quản trị viên
 
 # API VNAppMob (tỷ giá & giá vàng)
