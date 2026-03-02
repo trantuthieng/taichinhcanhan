@@ -39,6 +39,7 @@ def _build_engine(url: str):
 
 
 active_database_url = database_url
+last_database_error: str = ""
 engine = _build_engine(active_database_url)
 
 # Nếu PostgreSQL lỗi (thường do DATABASE_URL/secret sai), fallback để app không crash
@@ -47,6 +48,7 @@ if active_database_url.startswith("postgresql"):
         with engine.connect() as conn:
             conn.exec_driver_sql("SELECT 1")
     except Exception as exc:
+        last_database_error = str(exc)
         fallback_url = f"sqlite:///{DATA_DIR / 'finance_fallback.db'}"
         logger.error(
             "Không kết nối được PostgreSQL/Supabase. Fallback sang SQLite. "
@@ -82,3 +84,8 @@ def get_session() -> Session:
 def get_active_database_url() -> str:
     """URL database đang hoạt động sau khi resolve fallback."""
     return active_database_url
+
+
+def get_last_database_error() -> str:
+    """Lỗi kết nối DB gần nhất (nếu có)."""
+    return last_database_error
