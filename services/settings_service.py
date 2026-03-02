@@ -51,13 +51,15 @@ class SettingsService:
 
     @staticmethod
     def get_all_settings(user_id: int) -> Dict[str, str]:
+        if not user_id:
+            return dict(SettingsService.DEFAULTS)
+
         session = get_session()
         try:
             repo = SettingsRepository(session)
-            stored = repo.get_all(user_id)
+            stored = repo.get_all_for_user(user_id)
             result = dict(SettingsService.DEFAULTS)
-            for s in stored:
-                result[s.key] = s.value
+            result.update(stored)
             return result
         finally:
             session.close()
