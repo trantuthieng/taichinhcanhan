@@ -8,8 +8,12 @@ from services.account_service import AccountService
 from services.savings_service import SavingsService
 from services.budget_service import BudgetService
 from services.goal_service import GoalService
-from ui.components import metric_card, section_header, empty_state
-from ui.charts import income_expense_bar, expense_pie, cashflow_line, account_balance_donut
+from services.stock_service import StockService
+from ui.components import metric_card, section_header, empty_state, page_title, stock_card
+from ui.charts import (
+    income_expense_bar, expense_pie, cashflow_line,
+    account_balance_donut, stock_portfolio_chart, stock_profit_bar,
+)
 from utils.formatters import format_currency, short_amount
 from utils.helpers import get_current_month_range
 
@@ -20,7 +24,7 @@ def render_dashboard():
     now = datetime.now()
     start, end = get_current_month_range()
 
-    st.markdown(f"## 📊 Tổng quan tháng {now.month}/{now.year}")
+    page_title("Tổng quan", "📊", f"Tháng {now.month}/{now.year}")
 
     # ===== METRIC CARDS =====
     summary = ReportService.get_income_expense_summary(user_id, start, end)
@@ -29,78 +33,148 @@ def render_dashboard():
 
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        metric_card("Thu nhập", short_amount(summary["income"]), card_type="income")
+        metric_card("Thu nhập", short_amount(summary["income"]),
+                     delta=f"+{short_amount(summary['income'])} tháng này", card_type="income")
     with c2:
-        metric_card("Chi tiêu", short_amount(summary["expense"]), card_type="expense")
+        metric_card("Chi tiêu", short_amount(summary["expense"]),
+                     delta=f"-{short_amount(summary['expense'])} tháng này", card_type="expense")
     with c3:
+        net_pct = f"{summary['net']/max(summary['income'],1)*100:.0f}% thu nhập"
         metric_card("Tiết kiệm ròng", short_amount(summary["net"]),
-                     delta=f"{summary['net']/max(summary['income'],1)*100:.0f}% thu nhập",
-                     card_type="balance")
+                     delta=net_pct, card_type="balance")
     with c4:
         metric_card("Tổng tài sản", short_amount(total_balance), card_type="savings")
 
-    st.markdown("---")
+    st.markdown("<div style='height:1.5rem'></div>", unsafe_allow_html=True)
 
     # ===== BIỂU ĐỒ =====
     col_left, col_right = st.columns(2)
 
     with col_left:
+        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
         section_header("Xu hướng thu chi", "📈")
         trend = ReportService.get_monthly_trend(user_id, 6)
         if trend:
-            st.plotly_chart(income_expense_bar(trend), use_container_width=True)
+            st.plotly_chart(income_expense_bar(trend), use_container_width=True, config={"displayModeBar": False})
         else:
             empty_state("Chưa có dữ liệu giao dịch", "📊")
+        st.markdown('</div>', unsafe_allow_html=True)
 
     with col_right:
+        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
         section_header("Chi tiêu theo danh mục", "🍕")
         cat_data = ReportService.get_expense_by_category(user_id, start, end)
         if cat_data:
-            st.plotly_chart(expense_pie(cat_data), use_container_width=True)
+            st.plotly_chart(expense_pie(cat_data), use_container_width=True, config={"displayModeBar": False})
         else:
             empty_state("Chưa có chi tiêu tháng này", "🍕")
+        st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown("---")
+    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
 
     # ===== DÒNG TIỀN & TÀI SẢN =====
     col_a, col_b = st.columns(2)
 
     with col_a:
+        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
         section_header("Dòng tiền ròng", "💹")
         if trend:
-            st.plotly_chart(cashflow_line(trend), use_container_width=True)
+            st.plotly_chart(cashflow_line(trend), use_container_width=True, config={"displayModeBar": False})
+        else:
+            empty_state("Chưa có dữ liệu", "💹")
+        st.markdown('</div>', unsafe_allow_html=True)
 
     with col_b:
+        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
         section_header("Phân bổ tài sản", "🏦")
         if accounts:
-            st.plotly_chart(account_balance_donut(accounts), use_container_width=True)
+            st.plotly_chart(account_balance_donut(accounts), use_container_width=True, config={"displayModeBar": False})
         else:
             empty_state("Chưa có tài khoản", "🏦")
+        st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown("---")
+    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
 
     # ===== NGÂN SÁCH & MỤC TIÊU =====
     col_x, col_y = st.columns(2)
 
     with col_x:
+        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
         section_header("Ngân sách tháng này", "📋")
         budgets = BudgetService.get_budgets(user_id, now.month, now.year)
         if budgets:
             for b in budgets[:5]:
                 label = b["budget"].category.name if b["budget"].category_id else "Tổng chi tiêu"
                 pct = b["percentage"]
-                color = "🟢" if pct < 70 else "🟡" if pct < 90 else "🔴"
-                st.markdown(f"{color} **{label}**: {format_currency(b['spent'])} / {format_currency(b['budget'].amount)} ({pct}%)")
+                if pct < 70:
+                    color, bar_color = "🟢", "#00cec9"
+                elif pct < 90:
+                    color, bar_color = "🟡", "#fdcb6e"
+                else:
+                    color, bar_color = "🔴", "#ff6b6b"
+                st.markdown(
+                    f"""<div style="margin-bottom:0.6rem;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;">
+                            <span style="color:#E8E8F0; font-size:0.9rem;">{color} {label}</span>
+                            <span style="color:#a0a0b8; font-size:0.85rem;">{pct}%</span>
+                        </div>
+                        <div style="background:rgba(108,92,231,0.1); border-radius:6px; height:8px; overflow:hidden;">
+                            <div style="width:{min(pct,100)}%; height:100%; background:{bar_color}; border-radius:6px;"></div>
+                        </div>
+                        <div style="color:#6c6c8a; font-size:0.75rem; margin-top:2px;">
+                            {format_currency(b['spent'])} / {format_currency(b['budget'].amount)}
+                        </div>
+                    </div>""",
+                    unsafe_allow_html=True,
+                )
         else:
             empty_state("Chưa thiết lập ngân sách", "📋")
+        st.markdown('</div>', unsafe_allow_html=True)
 
     with col_y:
+        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
         section_header("Mục tiêu tiết kiệm", "🎯")
         goals = GoalService.get_goals(user_id, "active")
         if goals:
             for g in goals[:5]:
                 pct = g["percentage"]
                 icon = "✅" if pct >= 100 else "🔵"
-                st.markdown(f"{icon} **{g['goal'].name}**: {pct}% ({format_currency(g['goal'].current_amount)} / {format_currency(g['goal'].target_amount)})")
+                bar_col = "#00cec9" if pct >= 100 else "#6C5CE7"
+                st.markdown(
+                    f"""<div style="margin-bottom:0.6rem;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;">
+                            <span style="color:#E8E8F0; font-size:0.9rem;">{icon} {g['goal'].name}</span>
+                            <span style="color:#a0a0b8; font-size:0.85rem;">{pct}%</span>
+                        </div>
+                        <div style="background:rgba(108,92,231,0.1); border-radius:6px; height:8px; overflow:hidden;">
+                            <div style="width:{min(pct,100)}%; height:100%; background:{bar_col}; border-radius:6px;"></div>
+                        </div>
+                        <div style="color:#6c6c8a; font-size:0.75rem; margin-top:2px;">
+                            {format_currency(g['goal'].current_amount)} / {format_currency(g['goal'].target_amount)}
+                        </div>
+                    </div>""",
+                    unsafe_allow_html=True,
+                )
         else:
             empty_state("Chưa có mục tiêu", "🎯")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    # ===== CHỨNG KHOÁN NHANH =====
+    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
+    portfolio = StockService.get_portfolio_summary(user_id)
+    if portfolio:
+        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+        section_header("Danh mục chứng khoán", "📈")
+        cols = st.columns(min(len(portfolio), 4))
+        for idx, s in enumerate(portfolio[:4]):
+            with cols[idx]:
+                stock_card(
+                    ticker=s["ticker"],
+                    name=s["name"],
+                    price=s["current_price"],
+                    change_pct=s["profit_pct"],
+                    quantity=s["total_qty"],
+                    avg_price=s["avg_price"],
+                )
+        st.markdown('</div>', unsafe_allow_html=True)
+

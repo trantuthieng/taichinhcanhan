@@ -8,6 +8,7 @@ from models.transaction import Transaction
 from models.savings import SavingsDeposit, SavingsInterestEvent
 from models.fx_rate import FxRate
 from models.gold import GoldPrice, GoldHolding
+from models.stock import StockHolding
 from models.budget import Budget
 from models.goal import SavingsGoal
 from models.recurring import RecurringTransaction
@@ -27,6 +28,7 @@ __all__ = [
     "FxRate",
     "GoldPrice",
     "GoldHolding",
+    "StockHolding",
     "Budget",
     "SavingsGoal",
     "RecurringTransaction",

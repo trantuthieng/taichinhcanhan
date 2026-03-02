@@ -1,4 +1,4 @@
-"""Login page - Đăng nhập."""
+"""Login page - Đăng nhập (dark glassmorphism)."""
 
 import streamlit as st
 from services.auth_service import AuthService
@@ -10,9 +10,14 @@ def render_login():
     """Render trang đăng nhập."""
     st.markdown(
         """
-        <div style="text-align:center; margin-top:2rem;">
-            <h1>💰 Quản lý Tài chính</h1>
-            <p style="color:#888;">Đăng nhập để tiếp tục</p>
+        <div style="text-align:center; margin-top:3rem; margin-bottom:1.5rem;">
+            <div style="font-size:3rem; margin-bottom:0.3rem;">💰</div>
+            <h1 style="background: linear-gradient(135deg, #6C5CE7, #a29bfe, #00cec9);
+                        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+                        font-size:2rem; font-weight:800; margin:0;">
+                Quản lý Tài chính
+            </h1>
+            <p style="color:#6c6c8a; font-size:0.95rem; margin-top:0.4rem;">Đăng nhập để tiếp tục</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -84,7 +89,8 @@ def render_login():
                         st.error(msg)
 
         st.markdown(
-            '<p style="text-align:center; font-size:0.8rem; color:#aaa; margin-top:2rem;">'
-            f"Tài khoản mặc định: {settings.ADMIN_USERNAME} / {settings.ADMIN_PASSWORD}</p>",
+            f"""<p style="text-align:center; font-size:0.8rem; color:#6c6c8a; margin-top:2rem;">
+            Tài khoản mặc định: <span style='color:#a29bfe'>{settings.ADMIN_USERNAME}</span>
+            / <span style='color:#a29bfe'>{settings.ADMIN_PASSWORD}</span></p>""",
             unsafe_allow_html=True,
         )

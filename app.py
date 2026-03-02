@@ -73,27 +73,30 @@ if not st.session_state["authenticated"]:
 with st.sidebar:
     st.markdown(
         f"""
-        <div style="text-align:center; padding:1rem 0;">
-            <div style="font-size:2rem;">💰</div>
-            <div style="font-weight:700; font-size:1.1rem;">Quản lý Tài chính</div>
-            <div style="color:#888; font-size:0.85rem;">Xin chào, {st.session_state['username']} 👋</div>
+        <div style="text-align:center; padding:1.2rem 0 0.6rem;">
+            <div style="font-size:2.4rem; margin-bottom:0.2rem;">💰</div>
+            <div style="font-weight:700; font-size:1.15rem; color:#E8E8F0;">Quản lý Tài chính</div>
+            <div style="color:#6c6c8a; font-size:0.85rem; margin-top:0.2rem;">
+                Xin chào, <span style="color:#a29bfe;">{st.session_state['username']}</span> 👋
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
-    st.markdown("---")
+    st.markdown("<div style='height:0.6rem'></div>", unsafe_allow_html=True)
 
     PAGES = {
         "📊 Tổng quan": "dashboard",
         "🏦 Tài khoản": "accounts",
         "💳 Giao dịch": "transactions",
         "📂 Danh mục": "categories",
+        "📈 Chứng khoán": "stocks",
         "🏧 Tiết kiệm": "savings",
         "💱 Tỷ giá": "forex",
         "🥇 Vàng": "gold",
         "📋 Ngân sách": "budgets",
         "🎯 Mục tiêu": "goals",
-        "📈 Báo cáo": "reports",
+        "📉 Báo cáo": "reports",
         "⚙️ Cài đặt": "settings",
     }
 
@@ -149,6 +152,9 @@ elif page == "transactions":
 elif page == "categories":
     from pages.categories import render_categories
     render_categories()
+elif page == "stocks":
+    from pages.stocks import render_stocks
+    render_stocks()
 elif page == "savings":
     from pages.savings import render_savings
     render_savings()
