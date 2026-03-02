@@ -5,9 +5,11 @@ import bcrypt
 from typing import Optional, Tuple
 
 from db.database import get_session
+from config import settings
 from models.user import User
 from repositories.user_repo import UserRepository
 from repositories.audit_repo import AuditRepository
+from db.seed import seed_admin_user
 
 logger = logging.getLogger(__name__)
 
@@ -18,10 +20,20 @@ class AuthService:
     @staticmethod
     def login(username: str, password: str) -> Tuple[bool, Optional[dict], str]:
         """Đăng nhập. Trả về (success, user_data, message)."""
+        username = (username or "").strip()
         session = get_session()
         try:
             repo = UserRepository(session)
             user = repo.get_by_username(username)
+
+            if not user:
+                # Tự phục hồi admin mặc định nếu DB hiện tại chưa có user này
+                if username == settings.ADMIN_USERNAME:
+                    session.close()
+                    seed_admin_user()
+                    session = get_session()
+                    repo = UserRepository(session)
+                    user = repo.get_by_username(username)
 
             if not user:
                 return False, None, "Tên đăng nhập không tồn tại"
@@ -84,6 +96,8 @@ class AuthService:
     @staticmethod
     def create_user(username: str, password: str, display_name: str, email: str = None) -> Tuple[bool, str]:
         """Tạo user mới."""
+        username = (username or "").strip()
+        display_name = (display_name or "").strip()
         session = get_session()
         try:
             repo = UserRepository(session)
