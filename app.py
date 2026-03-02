@@ -31,7 +31,9 @@ st.set_page_config(
 
 # ===== INIT DATABASE =====
 from db.init_db import init_database
+from db.seed import run_all_seeds
 init_database()
+run_all_seeds()
 
 # ===== INJECT CSS =====
 from ui.styles import inject_custom_css
