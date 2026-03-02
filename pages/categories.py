@@ -34,21 +34,20 @@ def render_categories():
                             with col1:
                                 st.write(f"  • {sub.name}")
                             with col2:
-                                if not sub.is_system:
-                                    if st.button("🗑️", key=f"del_sub_{sub.id}"):
-                                        ok, msg = cat_service.delete_subcategory(user_id, sub.id)
-                                        if ok:
-                                            st.success(msg)
-                                            st.rerun()
-                                        else:
-                                            st.error(msg)
+                                if st.button("🗑️", key=f"del_sub_{sub.id}"):
+                                    ok, msg = cat_service.delete_subcategory(sub.id)
+                                    if ok:
+                                        st.success(msg)
+                                        st.rerun()
+                                    else:
+                                        st.error(msg)
                     else:
                         st.info("Chưa có danh mục con")
 
                     # Xóa nhóm
                     if not cat.is_system:
                         if st.button(f"🗑️ Xóa nhóm '{cat.name}'", key=f"del_cat_{cat.id}"):
-                            ok, msg = cat_service.delete_category(user_id, cat.id)
+                            ok, msg = cat_service.delete_category(cat.id)
                             if ok:
                                 st.success(msg)
                                 st.rerun()
@@ -90,7 +89,7 @@ def render_categories():
                     if not sub_name.strip():
                         st.error("Vui lòng nhập tên")
                     else:
-                        ok, msg = cat_service.create_subcategory(user_id, cat_id, sub_name.strip())
+                        ok, msg = cat_service.create_subcategory(cat_id, sub_name.strip())
                         if ok:
                             st.success(msg)
                             st.rerun()

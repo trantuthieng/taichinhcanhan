@@ -26,7 +26,7 @@ class GoalService:
                 name=name,
                 target_amount=target_amount,
                 current_amount=current_amount,
-                target_date=target_date,
+                deadline=target_date,
                 notes=notes,
                 status="active",
             )
@@ -95,8 +95,8 @@ class GoalService:
                 pct = round(g.current_amount / g.target_amount * 100, 1) if g.target_amount > 0 else 0
                 remaining = max(0, g.target_amount - g.current_amount)
                 days_left = None
-                if g.target_date:
-                    days_left = (g.target_date - date.today()).days
+                if g.deadline:
+                    days_left = (g.deadline - date.today()).days
                 results.append({
                     "goal": g,
                     "percentage": pct,

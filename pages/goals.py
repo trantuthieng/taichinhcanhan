@@ -64,7 +64,7 @@ def _render_goals_list(user_id: int):
 
             if days_left is not None:
                 if days_left > 0:
-                    st.write(f"**Hạn:** {goal.target_date.strftime('%d/%m/%Y')} (còn {days_left} ngày)")
+                    st.write(f"**Hạn:** {goal.deadline.strftime('%d/%m/%Y')} (còn {days_left} ngày)")
                     if daily:
                         st.write(f"**Cần tiết kiệm:** {format_currency(daily)}/ngày")
                 elif days_left == 0:
@@ -94,11 +94,11 @@ def _render_goals_list(user_id: int):
                         new_name = st.text_input("Tên", value=goal.name, key=f"gname_{goal.id}")
                         new_target = st.number_input("Mục tiêu", value=float(goal.target_amount),
                                                       key=f"gtarget_{goal.id}", format="%.0f")
-                        new_date = st.date_input("Hạn", value=goal.target_date, key=f"gdate_{goal.id}") if goal.target_date else st.date_input("Hạn", key=f"gdate2_{goal.id}")
+                        new_date = st.date_input("Hạn", value=goal.deadline, key=f"gdate_{goal.id}") if goal.deadline else st.date_input("Hạn", key=f"gdate2_{goal.id}")
                         if st.button("💾 Lưu", key=f"gsave_{goal.id}"):
                             ok, msg = GoalService.update_goal(user_id, goal.id,
                                                                name=new_name, target_amount=new_target,
-                                                               target_date=new_date)
+                                                               deadline=new_date)
                             if ok:
                                 st.success(msg)
                                 st.rerun()

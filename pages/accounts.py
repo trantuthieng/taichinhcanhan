@@ -2,6 +2,7 @@
 
 import streamlit as st
 from services.account_service import AccountService
+from schemas.account import AccountCreate, AccountUpdate
 from ui.components import account_card, section_header, empty_state
 from utils.formatters import format_currency, ACCOUNT_TYPE_LABELS
 from utils.constants import ACCOUNT_TYPES, CURRENCIES
@@ -27,7 +28,7 @@ def render_accounts():
                 with st.expander(f"{acc.name} - {format_currency(acc.balance, acc.currency)}", expanded=False):
                     c1, c2 = st.columns(2)
                     with c1:
-                        st.write(f"**Loại:** {ACCOUNT_TYPE_LABELS.get(acc.type, acc.type)}")
+                        st.write(f"**Loại:** {ACCOUNT_TYPE_LABELS.get(acc.account_type, acc.account_type)}")
                         st.write(f"**Tiền tệ:** {acc.currency}")
                         st.write(f"**Số dư:** {format_currency(acc.balance, acc.currency)}")
                     with c2:
@@ -35,17 +36,22 @@ def render_accounts():
                             st.write(f"**Ngân hàng:** {acc.bank_name}")
                         if acc.account_number:
                             st.write(f"**Số TK:** {acc.account_number}")
-                        if acc.notes:
-                            st.write(f"**Ghi chú:** {acc.notes}")
+                        if acc.description:
+                            st.write(f"**Ghi chú:** {acc.description}")
 
                     col_edit, col_del = st.columns(2)
                     with col_edit:
                         with st.popover("✏️ Sửa"):
                             new_name = st.text_input("Tên", value=acc.name, key=f"edit_name_{acc.id}")
                             new_balance = st.number_input("Số dư", value=float(acc.balance), key=f"edit_bal_{acc.id}")
-                            new_notes = st.text_input("Ghi chú", value=acc.notes or "", key=f"edit_notes_{acc.id}")
+                            new_desc = st.text_input("Ghi chú", value=acc.description or "", key=f"edit_notes_{acc.id}")
                             if st.button("💾 Lưu", key=f"save_{acc.id}"):
-                                ok, msg = AccountService.update_account(user_id, acc.id, name=new_name, balance=new_balance, notes=new_notes)
+                                update_data = AccountUpdate(
+                                    name=new_name,
+                                    balance=new_balance,
+                                    description=new_desc or None,
+                                )
+                                ok, msg = AccountService.update_account(user_id, acc.id, update_data)
                                 if ok:
                                     st.success(msg)
                                     st.rerun()
@@ -75,17 +81,16 @@ def render_accounts():
                 if not name.strip():
                     st.error("Vui lòng nhập tên tài khoản")
                 else:
-                    from schemas.account import AccountCreate
                     data = AccountCreate(
                         name=name.strip(),
-                        type=acc_type,
+                        account_type=acc_type,
                         currency=currency,
-                        balance=balance,
+                        initial_balance=balance,
                         bank_name=bank_name or None,
                         account_number=account_number or None,
-                        notes=notes or None,
+                        description=notes or None,
                     )
-                    ok, msg = AccountService.create_account(user_id, data)
+                    ok, msg, _id = AccountService.create_account(user_id, data)
                     if ok:
                         st.success(msg)
                         st.rerun()

@@ -30,12 +30,12 @@ def _render_rates(user_id: int):
     with col2:
         if st.button("🔄 Đồng bộ tỷ giá", use_container_width=True):
             with st.spinner("Đang cập nhật..."):
-                ok, msg = FxService.sync_rates()
-                if ok:
-                    st.success(msg)
+                result = FxService.sync_rates()
+                if result.success:
+                    st.success(result.message)
                     st.rerun()
                 else:
-                    st.warning(msg)
+                    st.warning(result.message)
 
     rates = FxService.get_latest_rates()
     if not rates:
@@ -47,12 +47,12 @@ def _render_rates(user_id: int):
     rows = []
     for r in rates:
         rows.append({
-            "Ngoại tệ": r.currency_code,
-            "Mua TM": format_number(r.buy_cash, 2) if r.buy_cash else "-",
-            "Mua CK": format_number(r.buy_transfer, 2) if r.buy_transfer else "-",
-            "Bán": format_number(r.sell, 2) if r.sell else "-",
-            "Nguồn": r.source or "",
-            "Cập nhật": r.fetched_at.strftime("%H:%M %d/%m") if r.fetched_at else "",
+            "Ngoại tệ": r["currency_code"],
+            "Mua TM": format_number(r["buy_rate"], 2) if r["buy_rate"] else "-",
+            "Mua CK": format_number(r["transfer_rate"], 2) if r["transfer_rate"] else "-",
+            "Bán": format_number(r["sell_rate"], 2) if r["sell_rate"] else "-",
+            "Nguồn": r.get("source") or "",
+            "Cập nhật": r["fetched_at"].strftime("%H:%M %d/%m") if r.get("fetched_at") else "",
         })
 
     df = pd.DataFrame(rows)
@@ -60,8 +60,10 @@ def _render_rates(user_id: int):
 
     # Thông tin cập nhật
     if rates:
-        last = max(r.fetched_at for r in rates if r.fetched_at)
-        st.caption(f"🕐 Cập nhật lần cuối: {last.strftime('%H:%M:%S %d/%m/%Y')}")
+        fetched_times = [r["fetched_at"] for r in rates if r.get("fetched_at")]
+        if fetched_times:
+            last = max(fetched_times)
+            st.caption(f"🕐 Cập nhật lần cuối: {last.strftime('%H:%M:%S %d/%m/%Y')}")
 
 
 def _render_converter(user_id: int):
@@ -69,7 +71,7 @@ def _render_converter(user_id: int):
     section_header("Quy đổi sang VND", "🔄")
 
     rates = FxService.get_latest_rates()
-    available_currencies = [r.currency_code for r in rates] if rates else ["USD", "EUR", "JPY"]
+    available_currencies = [r["currency_code"] for r in rates] if rates else ["USD", "EUR", "JPY"]
 
     col1, col2 = st.columns(2)
     with col1:
@@ -78,7 +80,7 @@ def _render_converter(user_id: int):
         amount = st.number_input("Số tiền", min_value=0.0, step=1.0, value=100.0)
 
     if st.button("💰 Quy đổi", use_container_width=True):
-        result = FxService.convert_to_vnd(currency, amount)
+        result = FxService.convert_to_vnd(amount, currency)
         if result:
             st.success(f"**{format_number(amount, 2)} {currency}** = **{format_currency(result)}**")
         else:

@@ -196,7 +196,7 @@ class ReportService:
                 Account.user_id == user_id, Account.is_deleted == 0
             ).all()
             return [
-                {"name": a.name, "type": a.type, "currency": a.currency, "balance": float(a.balance)}
+                {"name": a.name, "type": a.account_type, "currency": a.currency, "balance": float(a.balance)}
                 for a in accounts
             ]
         finally:

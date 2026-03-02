@@ -87,7 +87,7 @@ def _render_set_budget(user_id: int, now: datetime):
             year = st.number_input("Năm", min_value=2020, max_value=2100, value=now.year, key="set_bud_year")
 
         # Chọn category hoặc tổng
-        cat_options = [(None, "📊 Tổng chi tiêu")] + [(c.id, c.name) for c in categories if c.type == "expense"]
+        cat_options = [(None, "📊 Tổng chi tiêu")] + [(c.id, c.name) for c in categories if c.type and c.type.startswith("expense")]
         selected_cat = st.selectbox(
             "Áp dụng cho",
             options=[x[0] for x in cat_options],

@@ -9,6 +9,8 @@ from services.savings_service import SavingsService
 from services.budget_service import BudgetService
 from services.goal_service import GoalService
 from services.stock_service import StockService
+from services.gold_service import GoldService
+from services.fx_service import FxService
 from ui.components import metric_card, section_header, empty_state, page_title, stock_card
 from ui.charts import (
     income_expense_bar, expense_pie, cashflow_line,
@@ -29,7 +31,25 @@ def render_dashboard():
     # ===== METRIC CARDS =====
     summary = ReportService.get_income_expense_summary(user_id, start, end)
     accounts = ReportService.get_account_balances(user_id)
-    total_balance = sum(a["balance"] for a in accounts if a["currency"] == "VND")
+
+    # --- Tổng tài sản: VND accounts + ngoại tệ quy đổi + vàng + chứng khoán ---
+    total_vnd_accounts = sum(a["balance"] for a in accounts if a["currency"] == "VND")
+
+    # Ngoại tệ quy đổi VND
+    total_fx_vnd = 0.0
+    for a in accounts:
+        if a["currency"] != "VND" and a["balance"] > 0:
+            converted = FxService.convert_to_vnd(a["balance"], a["currency"])
+            total_fx_vnd += converted if converted else 0.0
+
+    # Vàng quy đổi VND
+    total_gold_vnd = GoldService.get_total_gold_value(user_id)
+
+    # Chứng khoán (giá trị thị trường)
+    stock_info = StockService.get_total_portfolio_value(user_id)
+    total_stock_vnd = stock_info.get("total_market_value", 0)
+
+    total_balance = total_vnd_accounts + total_fx_vnd + total_gold_vnd + total_stock_vnd
 
     c1, c2, c3, c4 = st.columns(4)
     with c1:

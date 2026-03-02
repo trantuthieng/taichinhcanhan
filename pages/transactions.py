@@ -47,7 +47,7 @@ def _render_transaction_list(user_id: int):
     end_dt = datetime.combine(end_date, datetime.max.time())
 
     transactions = TransactionService.get_transactions(
-        user_id, start=start_dt, end=end_dt, tx_type=tx_type, limit=100
+        user_id, start_date=start_dt, end_date=end_dt, tx_type=tx_type, limit=100
     )
 
     if not transactions:
@@ -123,7 +123,8 @@ def _render_add_transaction(user_id: int):
         return
 
     cat_service = CategoryService()
-    category_map, subcategory_map = cat_service.get_category_map(user_id)
+    category_map = cat_service.get_category_map(user_id)
+    subcategory_map = cat_service.get_subcategory_map(user_id)
 
     with st.form("add_tx_form"):
         tx_type = st.selectbox("Loại giao dịch *", ["expense", "income", "transfer"],

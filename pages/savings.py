@@ -38,7 +38,7 @@ def _render_savings_list(user_id: int):
         return
 
     # Tổng gửi tiết kiệm
-    total_deposit = sum(d.principal for d in deposits if d.status == "active")
+    total_deposit = sum(d.principal_amount for d in deposits if d.status == "active")
     st.info(f"💰 Tổng tiền gửi (đang hoạt động): **{format_currency(total_deposit)}**")
 
     # Cảnh báo sắp đáo hạn
@@ -48,22 +48,22 @@ def _render_savings_list(user_id: int):
 
     for d in deposits:
         status_icon = {"active": "🟢", "matured": "🟡", "closed": "⚪"}.get(d.status, "⚪")
-        interest_info = SavingsService.calculate_interest(d.id)
-        expected = interest_info.get("expected_interest", 0) if interest_info else 0
+        deposit_detail = SavingsService.get_deposit_detail(d.id)
+        expected = deposit_detail["interest"]["net_interest"] if deposit_detail else 0
 
         with st.expander(
-            f"{status_icon} {d.bank_name} - {format_currency(d.principal)} - {d.interest_rate}%/năm",
+            f"{status_icon} {d.bank_name} - {format_currency(d.principal_amount)} - {d.interest_rate}%/năm",
             expanded=False,
         ):
             c1, c2 = st.columns(2)
             with c1:
                 st.write(f"**Ngân hàng:** {d.bank_name}")
-                st.write(f"**Gốc:** {format_currency(d.principal)}")
+                st.write(f"**Gốc:** {format_currency(d.principal_amount)}")
                 st.write(f"**Lãi suất:** {d.interest_rate}%/năm")
                 st.write(f"**Kỳ hạn:** {d.term_months} tháng")
-                st.write(f"**Trả lãi:** {INTEREST_PAYMENT_METHODS.get(d.interest_payment, d.interest_payment)}")
+                st.write(f"**Trả lãi:** {INTEREST_PAYMENT_METHODS.get(d.interest_type, d.interest_type)}")
             with c2:
-                st.write(f"**Ngày gửi:** {format_date(d.start_date)}")
+                st.write(f"**Ngày gửi:** {format_date(d.open_date)}")
                 st.write(f"**Ngày đáo hạn:** {format_date(d.maturity_date)}")
                 st.write(f"**Trạng thái:** {DEPOSIT_STATUS_LABELS.get(d.status, d.status)}")
                 st.write(f"**Lãi dự kiến:** {format_currency(expected)}")
@@ -115,16 +115,16 @@ def _render_add_deposit(user_id: int):
                 from schemas.savings import SavingsDepositCreate
                 data = SavingsDepositCreate(
                     bank_name=bank_name,
-                    principal=principal,
+                    principal_amount=principal,
                     interest_rate=interest_rate,
                     term_months=term_months,
-                    interest_payment=interest_payment,
-                    start_date=start_date,
-                    is_compound=is_compound,
+                    interest_type=interest_payment,
+                    open_date=start_date,
+                    compound_interest=is_compound,
                     auto_renew=auto_renew,
                     notes=notes or None,
                 )
-                ok, msg = SavingsService.create_deposit(user_id, data)
+                ok, msg, _id = SavingsService.create_deposit(user_id, data)
                 if ok:
                     st.success(msg)
                     st.rerun()

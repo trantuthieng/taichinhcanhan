@@ -23,12 +23,12 @@ class StockService:
         ticker: str,
         quantity: float,
         avg_price: float,
-        name: str = None,
+        name: Optional[str] = None,
         exchange: str = "HOSE",
-        current_price: float = None,
-        buy_date: date = None,
-        account_id: int = None,
-        notes: str = None,
+        current_price: Optional[float] = None,
+        buy_date: Optional[date] = None,
+        account_id: Optional[int] = None,
+        notes: Optional[str] = None,
     ) -> Tuple[bool, str]:
         session = get_session()
         try:
@@ -45,7 +45,7 @@ class StockService:
                 notes=notes,
             )
             StockHoldingRepository(session).create(holding)
-            AuditRepository(session).log(user_id, "stock_holding", holding.id, "create")
+            AuditRepository(session).log_action(user_id, "create_stock", "stock_holding", holding.id)
             session.commit()
             return True, f"Đã thêm {quantity} CP {ticker.upper()}"
         except Exception as e:
@@ -64,7 +64,7 @@ class StockService:
             if not holding or holding.user_id != user_id or holding.is_deleted == 1:
                 return False, "Không tìm thấy khoản nắm giữ"
             repo.update(holding, data)
-            AuditRepository(session).log(user_id, "stock_holding", holding_id, "update")
+            AuditRepository(session).log_action(user_id, "update_stock", "stock_holding", holding_id)
             session.commit()
             return True, "Đã cập nhật"
         except Exception as e:
@@ -83,7 +83,7 @@ class StockService:
             if not holding or holding.user_id != user_id:
                 return False, "Không tìm thấy"
             repo.soft_delete(holding)
-            AuditRepository(session).log(user_id, "stock_holding", holding_id, "delete")
+            AuditRepository(session).log_action(user_id, "delete_stock", "stock_holding", holding_id)
             session.commit()
             return True, "Đã xoá"
         except Exception as e:

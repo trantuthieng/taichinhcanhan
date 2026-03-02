@@ -88,6 +88,47 @@ class CategoryService:
         return {c.id: f"{c.icon} {c.name}" if c.icon else c.name for c in cats}
 
     @staticmethod
+    def delete_category(category_id: int) -> tuple:
+        """Xóa nhóm danh mục (và tất cả danh mục con)."""
+        session = get_session()
+        try:
+            repo = CategoryRepository(session)
+            cat = repo.get_by_id(category_id)
+            if not cat:
+                return False, "Không tìm thấy danh mục"
+            if cat.is_system:
+                return False, "Không thể xóa danh mục hệ thống"
+            # Xóa danh mục con trước
+            subs = SubCategoryRepository(session).get_by_category(category_id)
+            for sub in subs:
+                session.delete(sub)
+            session.delete(cat)
+            session.commit()
+            return True, "Đã xóa nhóm danh mục"
+        except Exception as e:
+            session.rollback()
+            return False, f"Lỗi: {e}"
+        finally:
+            session.close()
+
+    @staticmethod
+    def delete_subcategory(subcategory_id: int) -> tuple:
+        """Xóa danh mục con."""
+        session = get_session()
+        try:
+            sub = session.query(SubCategory).get(subcategory_id)
+            if not sub:
+                return False, "Không tìm thấy danh mục con"
+            session.delete(sub)
+            session.commit()
+            return True, "Đã xóa danh mục con"
+        except Exception as e:
+            session.rollback()
+            return False, f"Lỗi: {e}"
+        finally:
+            session.close()
+
+    @staticmethod
     def get_subcategory_map(user_id: int) -> dict:
         """Trả về dict {subcategory_id: subcategory_name}."""
         session = get_session()
