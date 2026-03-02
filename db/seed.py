@@ -54,25 +54,45 @@ DEFAULT_CATEGORIES = [
 
 
 def seed_admin_user() -> bool:
-    """Tạo user admin mặc định nếu chưa có."""
+    """Đảm bảo user quản trị mặc định luôn đúng theo cấu hình."""
     session = get_session()
     try:
-        existing = session.query(User).filter(User.username == settings.ADMIN_USERNAME).first()
-        if existing:
-            logger.info("Admin user đã tồn tại, bỏ qua seed.")
-            return False
+        target = session.query(User).filter(User.username == settings.ADMIN_USERNAME).first()
+        changed = False
 
-        hashed = bcrypt.hashpw(settings.ADMIN_PASSWORD.encode("utf-8"), bcrypt.gensalt())
-        admin = User(
-            username=settings.ADMIN_USERNAME,
-            password_hash=hashed.decode("utf-8"),
-            display_name=settings.ADMIN_DISPLAY_NAME,
-            is_active=1,
-        )
-        session.add(admin)
+        if target:
+            setattr(target, "display_name", settings.ADMIN_DISPLAY_NAME)
+            setattr(target, "is_active", 1)
+            if not bcrypt.checkpw(
+                settings.ADMIN_PASSWORD.encode("utf-8"),
+                target.password_hash.encode("utf-8"),
+            ):
+                hashed = bcrypt.hashpw(settings.ADMIN_PASSWORD.encode("utf-8"), bcrypt.gensalt())
+                target.password_hash = hashed.decode("utf-8")
+            changed = True
+            logger.info("Đã cập nhật user quản trị: %s", settings.ADMIN_USERNAME)
+        else:
+            hashed = bcrypt.hashpw(settings.ADMIN_PASSWORD.encode("utf-8"), bcrypt.gensalt())
+            admin = User(
+                username=settings.ADMIN_USERNAME,
+                password_hash=hashed.decode("utf-8"),
+                display_name=settings.ADMIN_DISPLAY_NAME,
+                is_active=1,
+            )
+            session.add(admin)
+            changed = True
+            logger.info("Đã tạo user quản trị: %s", settings.ADMIN_USERNAME)
+
+        # Vô hiệu hoá tài khoản admin mặc định cũ nếu đổi username quản trị
+        if settings.ADMIN_USERNAME != "admin":
+            legacy_admin = session.query(User).filter(User.username == "admin").first()
+            if legacy_admin is not None and int(getattr(legacy_admin, "is_active", 0)) == 1:
+                setattr(legacy_admin, "is_active", 0)
+                changed = True
+                logger.info("Đã vô hiệu hóa user quản trị cũ: admin")
+
         session.commit()
-        logger.info(f"Đã tạo admin user: {settings.ADMIN_USERNAME}")
-        return True
+        return changed
     except Exception as e:
         session.rollback()
         logger.error(f"Lỗi seed admin: {e}")

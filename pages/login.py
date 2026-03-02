@@ -3,6 +3,7 @@
 import streamlit as st
 from services.auth_service import AuthService
 from schemas.user import UserCreate
+from config import settings
 
 
 def render_login():
@@ -23,7 +24,7 @@ def render_login():
 
         with tab_login:
             with st.form("login_form"):
-                username = st.text_input("Tên đăng nhập", placeholder="admin")
+                username = st.text_input("Tên đăng nhập", placeholder=settings.ADMIN_USERNAME)
                 password = st.text_input("Mật khẩu", type="password", placeholder="••••••")
                 submitted = st.form_submit_button("🔑 Đăng nhập", use_container_width=True)
 
@@ -84,6 +85,6 @@ def render_login():
 
         st.markdown(
             '<p style="text-align:center; font-size:0.8rem; color:#aaa; margin-top:2rem;">'
-            "Tài khoản mặc định: admin / admin123</p>",
+            f"Tài khoản mặc định: {settings.ADMIN_USERNAME} / {settings.ADMIN_PASSWORD}</p>",
             unsafe_allow_html=True,
         )
