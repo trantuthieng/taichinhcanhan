@@ -6,8 +6,8 @@ from datetime import datetime, date, timedelta
 from services.transaction_service import TransactionService
 from services.account_service import AccountService
 from services.category_service import CategoryService
-from ui.components import transaction_item, section_header, empty_state
-from utils.formatters import format_currency, format_date, TRANSACTION_TYPE_LABELS
+from ui.components import transaction_item, section_header, empty_state, page_title, metric_card
+from utils.formatters import format_currency, format_date, short_amount, TRANSACTION_TYPE_LABELS
 from utils.helpers import get_current_month_range, get_month_range
 
 
@@ -15,7 +15,7 @@ def render_transactions():
     """Render trang giao dịch."""
     user_id = st.session_state["user_id"]
 
-    st.markdown("## 💳 Giao dịch")
+    page_title("Giao dịch", "💳", "Quản lý thu chi")
 
     tab_list, tab_add = st.tabs(["📋 Danh sách", "➕ Thêm mới"])
 
@@ -31,6 +31,8 @@ def _render_transaction_list(user_id: int):
     now = datetime.now()
 
     # Filters
+    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+    section_header("Bộ lọc", "🔍")
     col_f1, col_f2, col_f3 = st.columns(3)
     with col_f1:
         filter_type = st.selectbox("Loại", ["Tất cả", "Thu nhập", "Chi tiêu", "Chuyển khoản"],
@@ -39,6 +41,7 @@ def _render_transaction_list(user_id: int):
         start_date = st.date_input("Từ ngày", value=date(now.year, now.month, 1), key="tx_start")
     with col_f3:
         end_date = st.date_input("Đến ngày", value=date.today(), key="tx_end")
+    st.markdown('</div>', unsafe_allow_html=True)
 
     type_map = {"Thu nhập": "income", "Chi tiêu": "expense", "Chuyển khoản": "transfer"}
     tx_type = type_map.get(filter_type)
@@ -58,11 +61,14 @@ def _render_transaction_list(user_id: int):
     total_in = sum(t.amount for t in transactions if t.type == "income")
     total_out = sum(t.amount for t in transactions if t.type == "expense")
     c1, c2, c3 = st.columns(3)
-    c1.metric("Thu", format_currency(total_in))
-    c2.metric("Chi", format_currency(total_out))
-    c3.metric("Ròng", format_currency(total_in - total_out))
+    with c1:
+        metric_card("Thu nhập", short_amount(total_in), card_type="income")
+    with c2:
+        metric_card("Chi tiêu", short_amount(total_out), card_type="expense")
+    with c3:
+        metric_card("Ròng", short_amount(total_in - total_out), card_type="balance")
 
-    st.markdown("---")
+    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
 
     # Load references
     from db.database import get_session
@@ -126,6 +132,8 @@ def _render_add_transaction(user_id: int):
     category_map = cat_service.get_category_map(user_id)
     subcategory_map = cat_service.get_subcategory_map(user_id)
 
+    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+    section_header("Thêm giao dịch mới", "➕")
     with st.form("add_tx_form"):
         tx_type = st.selectbox("Loại giao dịch *", ["expense", "income", "transfer"],
                                 format_func=lambda x: TRANSACTION_TYPE_LABELS.get(x, x))
@@ -184,3 +192,4 @@ def _render_add_transaction(user_id: int):
                     st.rerun()
                 else:
                     st.error(msg)
+    st.markdown('</div>', unsafe_allow_html=True)

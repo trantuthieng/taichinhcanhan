@@ -4,12 +4,12 @@ import streamlit as st
 from datetime import datetime, date
 
 from services.report_service import ReportService
-from ui.components import section_header, empty_state
+from ui.components import section_header, empty_state, page_title, metric_card
 from ui.charts import (
     income_expense_bar, expense_pie, cashflow_line,
     daily_expense_bar, account_balance_donut,
 )
-from utils.formatters import format_currency
+from utils.formatters import format_currency, short_amount
 from utils.helpers import get_month_range, get_quarter_range, get_year_range
 
 
@@ -18,7 +18,7 @@ def render_reports():
     user_id = st.session_state["user_id"]
     now = datetime.now()
 
-    st.markdown("## 📈 Báo cáo tài chính")
+    page_title("Báo cáo tài chính", "📈", "Phân tích thu chi")
 
     tab_monthly, tab_charts, tab_export = st.tabs(["📊 Tổng hợp", "📈 Biểu đồ", "📥 Xuất file"])
 
@@ -61,11 +61,14 @@ def _render_summary(user_id: int, now: datetime):
     summary = ReportService.get_income_expense_summary(user_id, start, end)
 
     c1, c2, c3 = st.columns(3)
-    c1.metric("💚 Thu nhập", format_currency(summary["income"]))
-    c2.metric("❤️ Chi tiêu", format_currency(summary["expense"]))
-    c3.metric("💙 Ròng", format_currency(summary["net"]))
+    with c1:
+        metric_card("Thu nhập", short_amount(summary["income"]), card_type="income")
+    with c2:
+        metric_card("Chi tiêu", short_amount(summary["expense"]), card_type="expense")
+    with c3:
+        metric_card("Ròng", short_amount(summary["net"]), card_type="balance")
 
-    st.markdown("---")
+    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
 
     # Chi tiêu theo danh mục
     section_header("Chi tiêu theo danh mục", "🍕")
@@ -73,11 +76,18 @@ def _render_summary(user_id: int, now: datetime):
     if cat_data:
         for item in cat_data:
             pct = item["total"] / max(summary["expense"], 1) * 100
-            st.write(f"• **{item['category']}**: {format_currency(item['total'])} ({pct:.1f}%)")
+            st.markdown(
+                f'<div style="display:flex;justify-content:space-between;padding:0.4rem 0;'
+                f'border-bottom:1px solid rgba(255,255,255,0.05);">' 
+                f'<span style="color:var(--text-secondary);">{item["category"]}</span>'
+                f'<span style="color:var(--text-primary);font-weight:600;">{format_currency(item["total"])} ({pct:.1f}%)</span>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
     else:
         st.info("Chưa có dữ liệu chi tiêu")
 
-    st.markdown("---")
+    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
 
     # Chi tiêu chi tiết theo danh mục con
     section_header("Chi tiết danh mục con", "📋")
@@ -90,7 +100,7 @@ def _render_summary(user_id: int, now: datetime):
         st.dataframe(df, use_container_width=True, hide_index=True)
 
     # Số dư tài khoản
-    st.markdown("---")
+    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
     section_header("Số dư tài khoản", "🏦")
     accounts = ReportService.get_account_balances(user_id)
     if accounts:
@@ -106,34 +116,34 @@ def _render_charts(user_id: int, now: datetime):
     section_header("Xu hướng 6 tháng", "📈")
     trend = ReportService.get_monthly_trend(user_id, 6)
     if trend:
-        st.plotly_chart(income_expense_bar(trend), use_container_width=True)
-        st.plotly_chart(cashflow_line(trend), use_container_width=True)
+        st.plotly_chart(income_expense_bar(trend), use_container_width=True, config={"displayModeBar": False})
+        st.plotly_chart(cashflow_line(trend), use_container_width=True, config={"displayModeBar": False})
     else:
         empty_state("Chưa có dữ liệu", "📈")
 
-    st.markdown("---")
+    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
 
     # Chi tiêu theo danh mục
     section_header("Chi tiêu tháng này", "🍕")
     cat_data = ReportService.get_expense_by_category(user_id, start, end)
     if cat_data:
-        st.plotly_chart(expense_pie(cat_data), use_container_width=True)
+        st.plotly_chart(expense_pie(cat_data), use_container_width=True, config={"displayModeBar": False})
 
-    st.markdown("---")
+    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
 
     # Chi tiêu hàng ngày
     section_header("Chi tiêu hàng ngày", "📊")
     daily = ReportService.get_daily_expenses(user_id, start, end)
     if daily:
-        st.plotly_chart(daily_expense_bar(daily), use_container_width=True)
+        st.plotly_chart(daily_expense_bar(daily), use_container_width=True, config={"displayModeBar": False})
 
-    st.markdown("---")
+    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
 
     # Phân bổ tài sản
     section_header("Phân bổ tài sản", "🏦")
     accounts = ReportService.get_account_balances(user_id)
     if accounts:
-        st.plotly_chart(account_balance_donut(accounts), use_container_width=True)
+        st.plotly_chart(account_balance_donut(accounts), use_container_width=True, config={"displayModeBar": False})
 
 
 def _render_export(user_id: int, now: datetime):

@@ -2,7 +2,7 @@
 
 import streamlit as st
 from services.category_service import CategoryService
-from ui.components import section_header, empty_state
+from ui.components import section_header, empty_state, page_title
 
 
 def render_categories():
@@ -10,7 +10,7 @@ def render_categories():
     user_id = st.session_state["user_id"]
     cat_service = CategoryService()
 
-    st.markdown("## 📂 Danh mục")
+    page_title("Danh mục", "📂", "Phân loại thu chi")
 
     tab_list, tab_add_cat, tab_add_sub = st.tabs(["📋 Danh sách", "➕ Thêm nhóm", "➕ Thêm danh mục"])
 
@@ -20,8 +20,10 @@ def render_categories():
             empty_state("Chưa có danh mục nào", "📂")
         else:
             for cat in categories:
-                with st.expander(f"📁 {cat.name} ({cat.type})", expanded=False):
-                    st.write(f"**Loại:** {'Thu nhập' if cat.type == 'income' else 'Chi tiêu' if cat.type == 'expense' else 'Khác'}")
+                type_label = 'Thu nhập' if cat.type == 'income' else 'Chi tiêu' if cat.type == 'expense' else 'Khác'
+                type_icon = '📥' if cat.type == 'income' else '📤'
+                with st.expander(f"{cat.icon or type_icon} {cat.name} — {type_label}", expanded=False):
+                    st.write(f"**Loại:** {type_label}")
                     if cat.icon:
                         st.write(f"**Icon:** {cat.icon}")
 
@@ -55,6 +57,8 @@ def render_categories():
                                 st.error(msg)
 
     with tab_add_cat:
+        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+        section_header("Tạo nhóm danh mục", "📁")
         with st.form("add_cat_form"):
             name = st.text_input("Tên nhóm danh mục *")
             cat_type = st.selectbox("Loại", ["expense", "income"],
@@ -71,12 +75,15 @@ def render_categories():
                         st.rerun()
                     else:
                         st.error(msg)
+        st.markdown('</div>', unsafe_allow_html=True)
 
     with tab_add_sub:
         categories = cat_service.get_categories(user_id)
         if not categories:
             st.warning("Vui lòng tạo nhóm danh mục trước")
         else:
+            st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+            section_header("Tạo danh mục con", "📋")
             with st.form("add_sub_form"):
                 cat_id = st.selectbox(
                     "Thuộc nhóm *",
@@ -95,3 +102,4 @@ def render_categories():
                             st.rerun()
                         else:
                             st.error(msg)
+            st.markdown('</div>', unsafe_allow_html=True)

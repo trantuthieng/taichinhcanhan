@@ -4,8 +4,8 @@ import streamlit as st
 from datetime import date
 
 from services.gold_service import GoldService
-from ui.components import section_header, empty_state
-from utils.formatters import format_currency, format_number, format_weight
+from ui.components import section_header, empty_state, page_title, metric_card
+from utils.formatters import format_currency, format_number, format_weight, short_amount
 from utils.constants import GOLD_TYPES
 
 
@@ -13,7 +13,7 @@ def render_gold():
     """Render trang vàng."""
     user_id = st.session_state["user_id"]
 
-    st.markdown("## 🥇 Vàng")
+    page_title("Vàng", "🥇", "Giá vàng & quản lý")
 
     tab_prices, tab_holdings, tab_add = st.tabs(["📊 Giá vàng", "💰 Vàng nắm giữ", "➕ Thêm vàng"])
 
@@ -80,10 +80,14 @@ def _render_gold_holdings(user_id: int):
     total_pnl = total_value - total_cost
 
     c1, c2, c3 = st.columns(3)
-    c1.metric("Giá trị thị trường", format_currency(total_value))
-    c2.metric("Giá vốn", format_currency(total_cost))
-    pnl_color = "🟢" if total_pnl >= 0 else "🔴"
-    c3.metric(f"{pnl_color} Lãi/Lỗ", format_currency(total_pnl))
+    with c1:
+        metric_card("Giá trị thị trường", short_amount(total_value), card_type="stock", icon="💰")
+    with c2:
+        metric_card("Giá vốn", short_amount(total_cost), card_type="balance", icon="💳")
+    with c3:
+        pnl_type = "income" if total_pnl >= 0 else "expense"
+        pnl_icon = "📈" if total_pnl >= 0 else "📉"
+        metric_card("Lãi/Lỗ", short_amount(total_pnl), card_type=pnl_type, icon=pnl_icon)
 
     st.markdown("---")
 
@@ -115,6 +119,8 @@ def _render_gold_holdings(user_id: int):
 
 def _render_add_holding(user_id: int):
     """Form thêm vàng."""
+    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+    section_header("Thêm vàng nắm giữ", "🥇")
     with st.form("add_gold_form"):
         gold_type = st.selectbox("Loại vàng *", GOLD_TYPES)
         quantity = st.number_input("Số lượng *", min_value=0.0, step=0.1, value=1.0)
@@ -137,3 +143,4 @@ def _render_add_holding(user_id: int):
                     st.rerun()
                 else:
                     st.error(msg)
+    st.markdown('</div>', unsafe_allow_html=True)

@@ -4,8 +4,8 @@ import streamlit as st
 from datetime import date, datetime
 
 from services.savings_service import SavingsService
-from ui.components import section_header, empty_state, status_badge, progress_bar
-from utils.formatters import format_currency, format_date, format_percentage, DEPOSIT_STATUS_LABELS
+from ui.components import section_header, empty_state, status_badge, progress_bar, page_title, metric_card
+from utils.formatters import format_currency, format_date, format_percentage, short_amount, DEPOSIT_STATUS_LABELS
 from utils.constants import SAVINGS_TERMS, INTEREST_PAYMENT_METHODS, VN_BANKS
 
 
@@ -13,7 +13,7 @@ def render_savings():
     """Render trang tiết kiệm."""
     user_id = st.session_state["user_id"]
 
-    st.markdown("## 🏧 Sổ tiết kiệm")
+    page_title("Sổ tiết kiệm", "🏧", "Quản lý tiền gửi")
 
     tab_list, tab_add = st.tabs(["📋 Danh sách", "➕ Gửi mới"])
 
@@ -39,13 +39,21 @@ def _render_savings_list(user_id: int):
 
     # Tổng gửi tiết kiệm
     total_deposit = sum(d.principal_amount for d in deposits if d.status == "active")
-    st.info(f"💰 Tổng tiền gửi (đang hoạt động): **{format_currency(total_deposit)}**")
+    active_count = sum(1 for d in deposits if d.status == "active")
+    mc1, mc2 = st.columns(2)
+    with mc1:
+        metric_card("Tổng tiền gửi", short_amount(total_deposit), card_type="savings", icon="💰")
+    with mc2:
+        metric_card("Sổ đang hoạt động", str(active_count), card_type="income", icon="📝")
 
     # Cảnh báo sắp đáo hạn
     maturing = SavingsService.get_maturing_soon(user_id, days=7)
     if maturing:
         st.warning(f"⏰ Có {len(maturing)} sổ sắp đáo hạn trong 7 ngày tới!")
 
+    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
+
+    section_header("Chi tiết sổ tiết kiệm", "📝")
     for d in deposits:
         status_icon = {"active": "🟢", "matured": "🟡", "closed": "⚪"}.get(d.status, "⚪")
         deposit_detail = SavingsService.get_deposit_detail(d.id)
@@ -55,6 +63,7 @@ def _render_savings_list(user_id: int):
             f"{status_icon} {d.bank_name} - {format_currency(d.principal_amount)} - {d.interest_rate}%/năm",
             expanded=False,
         ):
+            status_badge(d.status)
             c1, c2 = st.columns(2)
             with c1:
                 st.write(f"**Ngân hàng:** {d.bank_name}")
@@ -65,7 +74,6 @@ def _render_savings_list(user_id: int):
             with c2:
                 st.write(f"**Ngày gửi:** {format_date(d.open_date)}")
                 st.write(f"**Ngày đáo hạn:** {format_date(d.maturity_date)}")
-                st.write(f"**Trạng thái:** {DEPOSIT_STATUS_LABELS.get(d.status, d.status)}")
                 st.write(f"**Lãi dự kiến:** {format_currency(expected)}")
                 if d.notes:
                     st.write(f"**Ghi chú:** {d.notes}")
@@ -92,6 +100,8 @@ def _render_savings_list(user_id: int):
 
 def _render_add_deposit(user_id: int):
     """Form thêm sổ tiết kiệm."""
+    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+    section_header("Gửi sổ tiết kiệm mới", "🏧")
     with st.form("add_deposit_form"):
         bank_name = st.selectbox("Ngân hàng *", VN_BANKS)
         principal = st.number_input("Số tiền gốc *", min_value=0.0, step=1000000.0, format="%.0f")
@@ -130,3 +140,4 @@ def _render_add_deposit(user_id: int):
                     st.rerun()
                 else:
                     st.error(msg)
+    st.markdown('</div>', unsafe_allow_html=True)

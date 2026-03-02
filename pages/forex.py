@@ -4,7 +4,7 @@ import streamlit as st
 from datetime import datetime
 
 from services.fx_service import FxService
-from ui.components import section_header, empty_state
+from ui.components import section_header, empty_state, page_title
 from utils.formatters import format_currency, format_number
 from utils.constants import CURRENCIES
 
@@ -13,7 +13,7 @@ def render_forex():
     """Render trang tỷ giá ngoại tệ."""
     user_id = st.session_state["user_id"]
 
-    st.markdown("## 💱 Tỷ giá ngoại tệ")
+    page_title("Tỷ giá ngoại tệ", "💱", "Cập nhật realtime")
 
     tab_rates, tab_convert = st.tabs(["📊 Bảng tỷ giá", "🔄 Quy đổi"])
 
@@ -68,6 +68,7 @@ def _render_rates(user_id: int):
 
 def _render_converter(user_id: int):
     """Quy đổi ngoại tệ."""
+    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
     section_header("Quy đổi sang VND", "🔄")
 
     rates = FxService.get_latest_rates()
@@ -85,3 +86,4 @@ def _render_converter(user_id: int):
             st.success(f"**{format_number(amount, 2)} {currency}** = **{format_currency(result)}**")
         else:
             st.error(f"Không có tỷ giá cho {currency}. Hãy đồng bộ tỷ giá trước.")
+    st.markdown('</div>', unsafe_allow_html=True)

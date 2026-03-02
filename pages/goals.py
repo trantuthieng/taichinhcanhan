@@ -4,16 +4,16 @@ import streamlit as st
 from datetime import date
 
 from services.goal_service import GoalService
-from ui.components import section_header, empty_state, status_badge, progress_bar
+from ui.components import section_header, empty_state, status_badge, progress_bar, page_title, metric_card
 from ui.charts import goal_progress_bar
-from utils.formatters import format_currency, GOAL_STATUS_LABELS
+from utils.formatters import format_currency, short_amount, GOAL_STATUS_LABELS
 
 
 def render_goals():
     """Render trang mục tiêu."""
     user_id = st.session_state["user_id"]
 
-    st.markdown("## 🎯 Mục tiêu tài chính")
+    page_title("Mục tiêu tài chính", "🎯", "Theo dõi tiến độ")
 
     tab_list, tab_add = st.tabs(["📋 Danh sách", "➕ Thêm mới"])
 
@@ -37,13 +37,29 @@ def _render_goals_list(user_id: int):
         empty_state("Chưa có mục tiêu nào", "🎯")
         return
 
-    # Biểu đồ tổng quan
+    # Summary metrics for active goals
     active_goals = [g for g in goals if g["goal"].status == "active"]
     if active_goals:
-        section_header("Tiến độ tổng quan", "📊")
-        st.plotly_chart(goal_progress_bar(active_goals), use_container_width=True)
-        st.markdown("---")
+        total_target = sum(g["goal"].target_amount for g in active_goals)
+        total_current = sum(g["goal"].current_amount for g in active_goals)
+        avg_pct = sum(g["percentage"] for g in active_goals) / len(active_goals)
+        mc1, mc2, mc3 = st.columns(3)
+        with mc1:
+            metric_card("Mục tiêu", short_amount(total_target), card_type="balance", icon="🎯")
+        with mc2:
+            metric_card("Đã tích lũy", short_amount(total_current), card_type="income", icon="💰")
+        with mc3:
+            metric_card("Tiến độ TB", f"{avg_pct:.0f}%", card_type="savings", icon="📊")
 
+        st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
+
+    # Biểu đồ tổng quan
+    if active_goals:
+        section_header("Tiến độ tổng quan", "📊")
+        st.plotly_chart(goal_progress_bar(active_goals), use_container_width=True, config={"displayModeBar": False})
+        st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
+
+    section_header("Chi tiết mục tiêu", "📋")
     for g in goals:
         goal = g["goal"]
         pct = g["percentage"]
@@ -116,6 +132,8 @@ def _render_goals_list(user_id: int):
 
 def _render_add_goal(user_id: int):
     """Form thêm mục tiêu."""
+    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+    section_header("Tạo mục tiêu mới", "🎯")
     with st.form("add_goal_form"):
         name = st.text_input("Tên mục tiêu *", placeholder="VD: Mua xe, Du lịch, Quỹ khẩn cấp...")
         target_amount = st.number_input("Số tiền mục tiêu *", min_value=0.0, step=1000000.0, format="%.0f")
@@ -138,3 +156,4 @@ def _render_add_goal(user_id: int):
                     st.rerun()
                 else:
                     st.error(msg)
+    st.markdown('</div>', unsafe_allow_html=True)

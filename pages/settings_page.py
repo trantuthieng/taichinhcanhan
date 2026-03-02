@@ -8,14 +8,14 @@ from services.auth_service import AuthService
 from services.backup_service import BackupService
 from services.fx_service import FxService
 from services.gold_service import GoldService
-from ui.components import section_header, empty_state
+from ui.components import section_header, empty_state, page_title
 
 
 def render_settings():
     """Render trang cài đặt."""
     user_id = st.session_state["user_id"]
 
-    st.markdown("## ⚙️ Cài đặt")
+    page_title("Cài đặt", "⚙️", "Tùy chỉnh ứng dụng")
 
     tab_general, tab_password, tab_backup, tab_provider = st.tabs(
         ["🔧 Chung", "🔑 Mật khẩu", "💾 Sao lưu", "🌐 Nhà cung cấp"]
@@ -165,11 +165,17 @@ def _render_provider_status(user_id: int):
     with col1:
         if st.button("🔄 Cập nhật tỷ giá", use_container_width=True):
             with st.spinner("Đang cập nhật..."):
-                ok, msg = FxService.sync_rates()
-                st.success(msg) if ok else st.warning(msg)
+                result = FxService.sync_rates()
+                if result.success:
+                    st.success(result.message)
+                else:
+                    st.warning(result.message)
 
     with col2:
         if st.button("🔄 Cập nhật giá vàng", use_container_width=True):
             with st.spinner("Đang cập nhật..."):
-                ok, msg = GoldService.sync_prices()
-                st.success(msg) if ok else st.warning(msg)
+                result = GoldService.sync_prices()
+                if result.success:
+                    st.success(result.message)
+                else:
+                    st.warning(result.message)
