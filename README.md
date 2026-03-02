@@ -124,18 +124,26 @@ config.py               # Settings
 Trong app settings → **Secrets**, thêm nội dung (điều chỉnh theo nhu cầu):
 
 ```toml
-DATABASE_URL = "sqlite:///finance.db"
+DATABASE_URL = "postgresql://postgres:<PASSWORD>@db.<PROJECT-REF>.supabase.co:5432/postgres?sslmode=require"
 ADMIN_USERNAME = "admin"
 ADMIN_PASSWORD = "admin123"
-ADMIN_FULLNAME = "Quản trị viên"
-VNAPPMOB_BASE_URL = "https://appmob.vn/api"
-VCB_EXCHANGE_URL = "https://portal.vietcombank.com.vn/Usercontrols/TVPortal.TyGia/pXML.aspx"
+ADMIN_DISPLAY_NAME = "Quản trị viên"
+VNAPPMOB_BASE_URL = "https://api.vnappmob.com/api"
+VCB_EXCHANGE_URL = "https://portal.vietcombank.com.vn/Usercontrols/TVPortal.TyGia/pXML.aspx?b=10"
 ```
+
+### Tạo database trên Supabase
+
+1. Vào Supabase → **New project**.
+2. Mở **Project Settings** → **Database** → copy **Connection string** (URI).
+3. Đảm bảo URI ở dạng `postgresql://...` (nếu là `postgres://` app sẽ tự chuyển đổi).
+4. Dán URI vào `DATABASE_URL` trong Streamlit Secrets.
+5. Redeploy app, hệ thống sẽ tự tạo bảng lần chạy đầu.
 
 ### Lưu ý khi chạy trên Cloud
 
 - File SQLite trên Streamlit Cloud là dạng tạm thời theo container; dữ liệu có thể mất khi app restart/redeploy.
-- Nếu cần dữ liệu bền vững, nên chuyển `DATABASE_URL` sang PostgreSQL/MySQL.
+- Để dữ liệu bền vững, dùng Supabase PostgreSQL qua `DATABASE_URL` như mẫu trên.
 - Không commit file `.env`, `finance.db` hoặc `backups/` (đã được ignore trong `.gitignore`).
 
 ## License
