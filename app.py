@@ -9,6 +9,7 @@ import streamlit as st
 import sys
 import os
 import logging
+from config import settings
 
 # Thêm thư mục gốc vào sys.path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -31,9 +32,18 @@ st.set_page_config(
 
 # ===== INIT DATABASE =====
 from db.init_db import init_database
+from db.database import get_active_database_url
 from db.seed import run_all_seeds
 init_database()
 run_all_seeds()
+
+active_db_url = get_active_database_url()
+if settings.DATABASE_URL.startswith(("postgresql", "postgres://")) and active_db_url.startswith("sqlite"):
+    st.warning(
+        "⚠️ Không kết nối được Supabase/PostgreSQL nên app đang tạm chạy SQLite fallback. "
+        "Vui lòng kiểm tra lại DATABASE_URL trong Streamlit Secrets.",
+        icon="⚠️",
+    )
 
 # ===== INJECT CSS =====
 from ui.styles import inject_custom_css
