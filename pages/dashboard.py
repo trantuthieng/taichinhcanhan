@@ -28,6 +28,19 @@ def render_dashboard():
 
     page_title("Tổng quan", "📊", f"Tháng {now.month}/{now.year}")
 
+    # ===== CHECK IF NEW USER =====
+    accounts_list = AccountService.get_accounts(user_id)
+    is_new_user = len(accounts_list) == 0
+
+    if is_new_user:
+        _render_getting_started(user_id)
+        return
+
+    # ===== QUICK ACTIONS =====
+    _render_quick_actions()
+
+    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
+
     # ===== METRIC CARDS =====
     summary = ReportService.get_income_expense_summary(user_id, start, end)
     accounts = ReportService.get_account_balances(user_id)
@@ -198,3 +211,151 @@ def render_dashboard():
                 )
         st.markdown('</div>', unsafe_allow_html=True)
 
+
+def _render_getting_started(user_id):
+    """Hướng dẫn bắt đầu cho người dùng mới."""
+    from services.category_service import CategoryService
+
+    cat_service = CategoryService()
+    categories = cat_service.get_categories(user_id)
+    has_categories = len(categories) > 0 if categories else False
+
+    st.markdown(
+        """
+        <div class="getting-started">
+            <h3>🚀 Chào mừng bạn đến với Quản lý Tài chính!</h3>
+            <p style="color:#a0a0b8; font-size:0.9rem; margin-bottom:1rem;">
+                Hoàn thành các bước sau để bắt đầu quản lý tài chính hiệu quả:
+            </p>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # Step 1: Tạo tài khoản
+    st.markdown(
+        """
+        <div class="gs-step">
+            <div class="gs-num">1</div>
+            <div class="gs-text">
+                <strong>Tạo tài khoản</strong> — Thêm ví tiền, tài khoản ngân hàng, thẻ tín dụng...
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    if st.button("➕ Tạo tài khoản đầu tiên", key="gs_accounts", use_container_width=True):
+        st.session_state["current_page"] = "accounts"
+        st.rerun()
+
+    # Step 2: Danh mục
+    done_class = " done" if has_categories else ""
+    st.markdown(
+        f"""
+        <div class="gs-step">
+            <div class="gs-num{done_class}">2</div>
+            <div class="gs-text">
+                <strong>Thiết lập danh mục</strong> — Tạo nhóm thu nhập & chi tiêu
+                {"✅ Đã có danh mục mặc định" if has_categories else ""}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    if not has_categories:
+        if st.button("📂 Tạo danh mục", key="gs_categories", use_container_width=True):
+            st.session_state["current_page"] = "categories"
+            st.rerun()
+
+    # Step 3: Giao dịch
+    st.markdown(
+        """
+        <div class="gs-step">
+            <div class="gs-num">3</div>
+            <div class="gs-text">
+                <strong>Ghi chép giao dịch</strong> — Nhập thu nhập và chi tiêu hằng ngày
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # Step 4: Ngân sách
+    st.markdown(
+        """
+        <div class="gs-step">
+            <div class="gs-num">4</div>
+            <div class="gs-text">
+                <strong>Lập ngân sách & Đặt mục tiêu</strong> — Kiểm soát chi tiêu hiệu quả
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # Quick action cards for new users
+    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.markdown(
+            """<div class="quick-action">
+                <div class="qa-icon">🏦</div>
+                <div class="qa-title">Tài khoản</div>
+                <div class="qa-desc">Thêm ví, ngân hàng</div>
+            </div>""",
+            unsafe_allow_html=True,
+        )
+        if st.button("Tạo tài khoản", key="qa_new_acc", use_container_width=True):
+            st.session_state["current_page"] = "accounts"
+            st.rerun()
+    with c2:
+        st.markdown(
+            """<div class="quick-action">
+                <div class="qa-icon">📂</div>
+                <div class="qa-title">Danh mục</div>
+                <div class="qa-desc">Phân loại thu chi</div>
+            </div>""",
+            unsafe_allow_html=True,
+        )
+        if st.button("Xem danh mục", key="qa_new_cat", use_container_width=True):
+            st.session_state["current_page"] = "categories"
+            st.rerun()
+    with c3:
+        st.markdown(
+            """<div class="quick-action">
+                <div class="qa-icon">⚙️</div>
+                <div class="qa-title">Cài đặt</div>
+                <div class="qa-desc">Tuỳ chỉnh ứng dụng</div>
+            </div>""",
+            unsafe_allow_html=True,
+        )
+        if st.button("Mở cài đặt", key="qa_new_set", use_container_width=True):
+            st.session_state["current_page"] = "settings"
+            st.rerun()
+
+
+def _render_quick_actions():
+    """Thanh hành động nhanh trên dashboard cho người dùng đã có dữ liệu."""
+    st.markdown(
+        "<div style='color:#6c6c8a; font-size:0.72rem; font-weight:600; "
+        "letter-spacing:1px; text-transform:uppercase; margin-bottom:0.4rem;'>Hành động nhanh</div>",
+        unsafe_allow_html=True,
+    )
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        if st.button("💳 Thêm giao dịch", key="qa_txn", use_container_width=True):
+            st.session_state["current_page"] = "transactions"
+            st.rerun()
+    with c2:
+        if st.button("🏦 Thêm tài khoản", key="qa_acc", use_container_width=True):
+            st.session_state["current_page"] = "accounts"
+            st.rerun()
+    with c3:
+        if st.button("📋 Lập ngân sách", key="qa_bud", use_container_width=True):
+            st.session_state["current_page"] = "budgets"
+            st.rerun()
+    with c4:
+        if st.button("📉 Xem báo cáo", key="qa_rep", use_container_width=True):
+            st.session_state["current_page"] = "reports"
+            st.rerun()

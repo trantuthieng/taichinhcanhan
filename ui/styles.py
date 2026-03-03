@@ -296,6 +296,30 @@ def inject_custom_css():
     [data-testid="stSidebar"] [data-testid="stMarkdown"] {
         color: var(--text-primary);
     }
+    /* Sidebar nav buttons - look like menu items */
+    [data-testid="stSidebar"] .stButton > button {
+        background: transparent !important;
+        border: none !important;
+        color: var(--text-secondary) !important;
+        text-align: left !important;
+        padding: 0.55rem 0.9rem !important;
+        font-size: 0.9rem !important;
+        font-weight: 500 !important;
+        border-radius: 10px !important;
+        margin-bottom: 2px !important;
+        justify-content: flex-start !important;
+        box-shadow: none !important;
+    }
+    [data-testid="stSidebar"] .stButton > button:hover {
+        background: rgba(108, 92, 231, 0.12) !important;
+        color: var(--text-primary) !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+    [data-testid="stSidebar"] .stButton > button:focus {
+        box-shadow: none !important;
+        border: none !important;
+    }
 
     .sidebar-header {
         text-align: center;
@@ -422,6 +446,83 @@ def inject_custom_css():
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(108, 92, 231, 0.3); border-radius: 10px; }
     ::-webkit-scrollbar-thumb:hover { background: rgba(108, 92, 231, 0.5); }
+
+    /* ===== QUICK ACTIONS ===== */
+    .quick-action {
+        background: var(--bg-card);
+        border: 1px solid var(--border-glass);
+        border-radius: 14px;
+        padding: 1.2rem 1rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-bottom: 0.5rem;
+    }
+    .quick-action:hover {
+        background: var(--bg-card-hover);
+        border-color: var(--accent-purple);
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-glow);
+    }
+    .quick-action .qa-icon {
+        font-size: 1.8rem;
+        margin-bottom: 0.35rem;
+    }
+    .quick-action .qa-title {
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.15rem;
+    }
+    .quick-action .qa-desc {
+        font-size: 0.73rem;
+        color: var(--text-muted);
+    }
+
+    /* ===== GETTING STARTED ===== */
+    .getting-started {
+        background: linear-gradient(135deg, rgba(108, 92, 231, 0.15), rgba(162, 155, 254, 0.08));
+        border: 1px solid rgba(108, 92, 231, 0.3);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 1.2rem;
+    }
+    .getting-started h3 {
+        color: var(--text-primary);
+        font-size: 1.15rem;
+        margin-bottom: 0.8rem;
+    }
+    .gs-step {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        padding: 0.6rem 0;
+        border-bottom: 1px solid rgba(108, 92, 231, 0.1);
+    }
+    .gs-step:last-child { border-bottom: none; }
+    .gs-step .gs-num {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: var(--accent-purple);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+    .gs-step .gs-num.done {
+        background: var(--accent-green);
+    }
+    .gs-step .gs-text {
+        color: var(--text-secondary);
+        font-size: 0.88rem;
+    }
+    .gs-step .gs-text strong {
+        color: var(--text-primary);
+    }
 
     /* ===== HIDE STREAMLIT DEFAULTS ===== */
     #MainMenu { visibility: hidden; }

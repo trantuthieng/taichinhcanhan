@@ -27,7 +27,7 @@ st.set_page_config(
     page_title="Quản lý Tài chính",
     page_icon="💰",
     layout="wide",
-    initial_sidebar_state="auto",
+    initial_sidebar_state="expanded",
 )
 
 # ===== INIT DATABASE =====
@@ -73,9 +73,13 @@ if not st.session_state["authenticated"]:
 with st.sidebar:
     st.markdown(
         f"""
-        <div style="text-align:center; padding:1.2rem 0 0.6rem;">
+        <div style="text-align:center; padding:1.2rem 0 0.8rem;">
             <div style="font-size:2.4rem; margin-bottom:0.2rem;">💰</div>
-            <div style="font-weight:700; font-size:1.15rem; color:#E8E8F0;">Quản lý Tài chính</div>
+            <div style="font-weight:700; font-size:1.15rem;
+                 background: linear-gradient(135deg, #6C5CE7, #a29bfe);
+                 -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                Quản lý Tài chính
+            </div>
             <div style="color:#6c6c8a; font-size:0.85rem; margin-top:0.2rem;">
                 Xin chào, <span style="color:#a29bfe;">{st.session_state['username']}</span> 👋
             </div>
@@ -83,31 +87,61 @@ with st.sidebar:
         """,
         unsafe_allow_html=True,
     )
-    st.markdown("<div style='height:0.6rem'></div>", unsafe_allow_html=True)
 
-    PAGES = {
-        "📊 Tổng quan": "dashboard",
-        "🏦 Tài khoản": "accounts",
-        "💳 Giao dịch": "transactions",
-        "📂 Danh mục": "categories",
-        "📈 Chứng khoán": "stocks",
-        "🏧 Tiết kiệm": "savings",
-        "💱 Tỷ giá": "forex",
-        "🥇 Vàng": "gold",
-        "📋 Ngân sách": "budgets",
-        "🎯 Mục tiêu": "goals",
-        "📉 Báo cáo": "reports",
-        "⚙️ Cài đặt": "settings",
+    NAV_GROUPS = {
+        "CHÍNH": {
+            "📊 Tổng quan": "dashboard",
+            "🏦 Tài khoản": "accounts",
+            "💳 Giao dịch": "transactions",
+            "📂 Danh mục": "categories",
+        },
+        "ĐẦU TƯ": {
+            "📈 Chứng khoán": "stocks",
+            "🥇 Vàng": "gold",
+            "💱 Tỷ giá": "forex",
+        },
+        "KẾ HOẠCH": {
+            "🏧 Tiết kiệm": "savings",
+            "📋 Ngân sách": "budgets",
+            "🎯 Mục tiêu": "goals",
+        },
+        "KHÁC": {
+            "📉 Báo cáo": "reports",
+            "⚙️ Cài đặt": "settings",
+        },
     }
 
-    selected = st.radio(
-        "Chức năng",
-        list(PAGES.keys()),
-        label_visibility="collapsed",
-    )
-    st.session_state["current_page"] = PAGES[selected]
+    # Build flat map for lookup
+    ALL_PAGES = {}
+    for items in NAV_GROUPS.values():
+        ALL_PAGES.update(items)
 
-    st.markdown("---")
+    current = st.session_state.get("current_page", "dashboard")
+
+    for group_name, items in NAV_GROUPS.items():
+        st.markdown(
+            f"<div style='color:#6c6c8a; font-size:0.7rem; font-weight:600; "
+            f"letter-spacing:1.2px; padding:0.8rem 0.5rem 0.3rem; text-transform:uppercase;'>"
+            f"{group_name}</div>",
+            unsafe_allow_html=True,
+        )
+        for label, page_key in items.items():
+            is_active = current == page_key
+            if is_active:
+                st.markdown(
+                    f"""<div style="display:flex; align-items:center; gap:0.5rem; padding:0.55rem 0.9rem;
+                        border-radius:10px; margin-bottom:2px; font-size:0.9rem; font-weight:600;
+                        background:linear-gradient(135deg, rgba(108,92,231,0.25), rgba(162,155,254,0.15));
+                        color:#a29bfe; border-left:3px solid #6C5CE7;">
+                        {label}</div>""",
+                    unsafe_allow_html=True,
+                )
+            else:
+                if st.button(label, key=f"nav_{page_key}", use_container_width=True):
+                    st.session_state["current_page"] = page_key
+                    st.rerun()
+
+    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
 
     # Auto-sync tỷ giá & giá vàng khi bật
     from services.settings_service import SettingsService
