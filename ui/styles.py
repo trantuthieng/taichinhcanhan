@@ -527,7 +527,18 @@ def inject_custom_css():
     /* ===== HIDE STREAMLIT DEFAULTS ===== */
     #MainMenu { visibility: hidden; }
     footer { visibility: hidden; }
-    header { visibility: hidden; }
+    /* Keep header visible so sidebar toggle (hamburger) works */
+
+    /* ===== FORCE SIDEBAR VISIBLE ===== */
+    [data-testid="stSidebar"] {
+        display: flex !important;
+        min-width: 280px !important;
+    }
+    [data-testid="stSidebar"][aria-expanded="false"] {
+        display: flex !important;
+        margin-left: 0 !important;
+        min-width: 280px !important;
+    }
 
     /* ===== MOBILE ===== */
     @media (max-width: 768px) {
