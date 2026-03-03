@@ -1,195 +1,188 @@
-"""Transactions page - Quản lý giao dịch."""
+"""Transactions – Quản lý giao dịch."""
 
 import streamlit as st
-from datetime import datetime, date, timedelta
+from datetime import datetime, timedelta
 
 from services.transaction_service import TransactionService
 from services.account_service import AccountService
 from services.category_service import CategoryService
-from ui.components import transaction_item, section_header, empty_state, page_title, metric_card
-from utils.formatters import format_currency, format_date, short_amount, TRANSACTION_TYPE_LABELS
-from utils.helpers import get_current_month_range, get_month_range
+from schemas.transaction import TransactionCreate
+from ui.components import page_header, empty_state
+from utils.formatters import format_currency, format_date, TRANSACTION_TYPE_LABELS
+from utils.helpers import get_current_month_range
 
 
 def render_transactions():
-    """Render trang giao dịch."""
     user_id = st.session_state["user_id"]
+    page_header("Giao dịch", "💳")
 
-    page_title("Giao dịch", "💳", "Quản lý thu chi")
+    cat_service = CategoryService()
 
-    tab_list, tab_add = st.tabs(["📋 Danh sách", "➕ Thêm mới"])
+    tab_list, tab_add = st.tabs(["📋 Danh sách", "➕ Thêm giao dịch"])
 
+    # ── List ──
     with tab_list:
-        _render_transaction_list(user_id)
+        start_default, end_default = get_current_month_range()
 
+        # Filters
+        fc1, fc2, fc3, fc4 = st.columns(4)
+        with fc1:
+            start_date = st.date_input("Từ ngày", value=start_default.date())
+        with fc2:
+            end_date = st.date_input("Đến ngày", value=end_default.date())
+        with fc3:
+            tx_types = ["Tất cả", "income", "expense", "transfer"]
+            tx_filter = st.selectbox(
+                "Loại",
+                tx_types,
+                format_func=lambda x: "Tất cả" if x == "Tất cả"
+                else TRANSACTION_TYPE_LABELS.get(x, x),
+            )
+        with fc4:
+            search = st.text_input("Tìm kiếm", placeholder="Mô tả...")
+
+        start_dt = datetime.combine(start_date, datetime.min.time())
+        end_dt = datetime.combine(end_date, datetime.max.time())
+
+        tx_type_arg = None if tx_filter == "Tất cả" else tx_filter
+        transactions = TransactionService.get_transactions(
+            user_id, start_date=start_dt, end_date=end_dt,
+            tx_type=tx_type_arg, search=search or None, limit=200,
+        )
+
+        if not transactions:
+            empty_state("Không có giao dịch nào", "💳")
+        else:
+            # Summary
+            total_in = sum(t.amount for t in transactions if t.type == "income")
+            total_out = sum(t.amount for t in transactions if t.type == "expense")
+            s1, s2, s3 = st.columns(3)
+            s1.metric("Thu nhập", format_currency(total_in))
+            s2.metric("Chi tiêu", format_currency(total_out))
+            s3.metric("Số giao dịch", len(transactions))
+
+            # Table
+            cat_map = cat_service.get_category_map(user_id)
+            rows = []
+            for t in transactions:
+                rows.append({
+                    "Ngày": format_date(t.transaction_date),
+                    "Loại": TRANSACTION_TYPE_LABELS.get(t.type, t.type),
+                    "Số tiền": format_currency(t.amount, t.currency),
+                    "Danh mục": cat_map.get(t.category_id, "—"),
+                    "Mô tả": t.description or "",
+                })
+            st.dataframe(rows, use_container_width=True, hide_index=True)
+
+            # Delete section
+            with st.expander("🗑️ Xoá giao dịch"):
+                tx_options = {
+                    f"#{t.id} – {format_date(t.transaction_date)} – "
+                    f"{format_currency(t.amount)} – {t.description or ''}": t.id
+                    for t in transactions[:50]
+                }
+                selected = st.selectbox("Chọn giao dịch", list(tx_options.keys()))
+                if st.button("Xoá", type="primary"):
+                    ok, msg = TransactionService.delete_transaction(user_id, tx_options[selected])
+                    st.success(msg) if ok else st.error(msg)
+                    if ok:
+                        st.rerun()
+
+    # ── Add ──
     with tab_add:
-        _render_add_transaction(user_id)
+        accounts = AccountService.get_accounts(user_id) or []
+        if not accounts:
+            st.warning("Bạn cần tạo tài khoản trước khi thêm giao dịch.")
+            if st.button("🏦 Tạo tài khoản ngay"):
+                st.session_state["current_page"] = "accounts"
+                st.rerun()
+            return
 
+        with st.form("add_tx_form"):
+            col1, col2 = st.columns(2)
+            with col1:
+                tx_type = st.selectbox(
+                    "Loại giao dịch *",
+                    ["income", "expense", "transfer"],
+                    format_func=lambda x: TRANSACTION_TYPE_LABELS.get(x, x),
+                )
+                account_id = st.selectbox(
+                    "Tài khoản *",
+                    [a.id for a in accounts],
+                    format_func=lambda x: next(
+                        (f"{a.name} ({a.currency})" for a in accounts if a.id == x), str(x)
+                    ),
+                )
+                amount = st.number_input("Số tiền *", min_value=0.0, step=10000.0)
 
-def _render_transaction_list(user_id: int):
-    """Danh sách giao dịch với filter."""
-    now = datetime.now()
+            with col2:
+                tx_date = st.date_input("Ngày", value=datetime.now().date())
 
-    # Filters
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    section_header("Bộ lọc", "🔍")
-    col_f1, col_f2, col_f3 = st.columns(3)
-    with col_f1:
-        filter_type = st.selectbox("Loại", ["Tất cả", "Thu nhập", "Chi tiêu", "Chuyển khoản"],
-                                    key="tx_filter_type")
-    with col_f2:
-        start_date = st.date_input("Từ ngày", value=date(now.year, now.month, 1), key="tx_start")
-    with col_f3:
-        end_date = st.date_input("Đến ngày", value=date.today(), key="tx_end")
-    st.markdown('</div>', unsafe_allow_html=True)
+                # Category selection based on type
+                if tx_type == "income":
+                    categories = cat_service.get_income_categories(user_id)
+                elif tx_type == "expense":
+                    categories = cat_service.get_expense_categories(user_id)
+                else:
+                    categories = []
 
-    type_map = {"Thu nhập": "income", "Chi tiêu": "expense", "Chuyển khoản": "transfer"}
-    tx_type = type_map.get(filter_type)
+                cat_id = None
+                if categories:
+                    cat_id = st.selectbox(
+                        "Danh mục",
+                        [None] + [c.id for c in categories],
+                        format_func=lambda x: "— Không chọn —" if x is None
+                        else next((c.name for c in categories if c.id == x), ""),
+                    )
 
-    start_dt = datetime.combine(start_date, datetime.min.time())
-    end_dt = datetime.combine(end_date, datetime.max.time())
+                sub_id = None
+                if cat_id:
+                    subs = cat_service.get_subcategories(cat_id)
+                    if subs:
+                        sub_id = st.selectbox(
+                            "Danh mục con",
+                            [None] + [s.id for s in subs],
+                            format_func=lambda x: "— Không chọn —" if x is None
+                            else next((s.name for s in subs if s.id == x), ""),
+                        )
 
-    transactions = TransactionService.get_transactions(
-        user_id, start_date=start_dt, end_date=end_dt, tx_type=tx_type, limit=100
-    )
+            # Transfer destination
+            to_account_id = None
+            if tx_type == "transfer":
+                other_accounts = [a for a in accounts if a.id != account_id]
+                if other_accounts:
+                    to_account_id = st.selectbox(
+                        "Tài khoản đích *",
+                        [a.id for a in other_accounts],
+                        format_func=lambda x: next(
+                            (f"{a.name} ({a.currency})" for a in other_accounts if a.id == x),
+                            str(x),
+                        ),
+                    )
 
-    if not transactions:
-        empty_state("Không có giao dịch trong khoảng thời gian này", "📭")
-        return
+            description = st.text_input("Mô tả", placeholder="Mua sắm, ăn uống...")
+            notes = st.text_area("Ghi chú", height=60)
 
-    # Summary
-    total_in = sum(t.amount for t in transactions if t.type == "income")
-    total_out = sum(t.amount for t in transactions if t.type == "expense")
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        metric_card("Thu nhập", short_amount(total_in), card_type="income")
-    with c2:
-        metric_card("Chi tiêu", short_amount(total_out), card_type="expense")
-    with c3:
-        metric_card("Ròng", short_amount(total_in - total_out), card_type="balance")
-
-    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
-
-    # Load references
-    from db.database import get_session
-    from models.category import SubCategory
-    from models.account import Account
-    session = get_session()
-    try:
-        subcats = {s.id: s.name for s in session.query(SubCategory).all()}
-        accs = {a.id: a.name for a in session.query(Account).filter(Account.user_id == user_id).all()}
-    finally:
-        session.close()
-
-    for tx in transactions:
-        cat_name = subcats.get(tx.category_id, "")
-        acc_name = accs.get(tx.account_id, "")
-        date_str = format_date(tx.transaction_date, "dd/mm/yyyy HH:MM")
-
-        with st.expander(
-            f"{'🟢' if tx.type == 'income' else '🔴' if tx.type == 'expense' else '🔄'} "
-            f"{tx.description or cat_name} — {format_currency(tx.amount)} — {date_str}",
-            expanded=False,
-        ):
-            st.write(f"**Loại:** {TRANSACTION_TYPE_LABELS.get(tx.type, tx.type)}")
-            st.write(f"**Tài khoản:** {acc_name}")
-            st.write(f"**Danh mục:** {cat_name}")
-            if tx.description:
-                st.write(f"**Mô tả:** {tx.description}")
-
-            col_e, col_d = st.columns(2)
-            with col_e:
-                with st.popover("✏️ Sửa"):
-                    new_amount = st.number_input("Số tiền", value=float(tx.amount), key=f"ed_amt_{tx.id}")
-                    new_desc = st.text_input("Mô tả", value=tx.description or "", key=f"ed_desc_{tx.id}")
-                    if st.button("💾 Lưu", key=f"ed_save_{tx.id}"):
-                        from schemas.transaction import TransactionUpdate
-                        upd = TransactionUpdate(amount=new_amount, description=new_desc)
-                        ok, msg = TransactionService.update_transaction(user_id, tx.id, upd)
-                        if ok:
-                            st.success(msg)
-                            st.rerun()
-                        else:
-                            st.error(msg)
-            with col_d:
-                if st.button("🗑️ Xóa", key=f"del_tx_{tx.id}"):
-                    ok, msg = TransactionService.delete_transaction(user_id, tx.id)
+            if st.form_submit_button("✅ Lưu giao dịch", use_container_width=True):
+                if amount <= 0:
+                    st.error("Số tiền phải lớn hơn 0")
+                else:
+                    acc_obj = next((a for a in accounts if a.id == account_id), None)
+                    data = TransactionCreate(
+                        account_id=account_id,
+                        to_account_id=to_account_id,
+                        category_id=cat_id,
+                        subcategory_id=sub_id,
+                        type=tx_type,
+                        amount=amount,
+                        currency=acc_obj.currency if acc_obj else "VND",
+                        description=description.strip() or None,
+                        notes=notes.strip() or None,
+                        transaction_date=datetime.combine(tx_date, datetime.now().time()),
+                    )
+                    ok, msg, _ = TransactionService.create_transaction(user_id, data)
                     if ok:
                         st.success(msg)
                         st.rerun()
                     else:
                         st.error(msg)
-
-
-def _render_add_transaction(user_id: int):
-    """Form thêm giao dịch mới."""
-    accounts = AccountService.get_accounts(user_id)
-    if not accounts:
-        st.warning("Vui lòng tạo tài khoản trước khi thêm giao dịch.")
-        return
-
-    cat_service = CategoryService()
-    category_map = cat_service.get_category_map(user_id)
-    subcategory_map = cat_service.get_subcategory_map(user_id)
-
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    section_header("Thêm giao dịch mới", "➕")
-    with st.form("add_tx_form"):
-        tx_type = st.selectbox("Loại giao dịch *", ["expense", "income", "transfer"],
-                                format_func=lambda x: TRANSACTION_TYPE_LABELS.get(x, x))
-
-        amount = st.number_input("Số tiền *", min_value=0.0, step=10000.0, format="%.0f")
-
-        account_id = st.selectbox(
-            "Tài khoản *",
-            options=[a.id for a in accounts],
-            format_func=lambda x: next((a.name for a in accounts if a.id == x), ""),
-        )
-
-        # Category selection
-        cat_options = list(subcategory_map.keys())
-        category_id = None
-        if cat_options:
-            selected_sub = st.selectbox(
-                "Danh mục",
-                options=cat_options,
-                format_func=lambda x: subcategory_map.get(x, ""),
-            )
-            category_id = selected_sub
-
-        to_account_id = None
-        if tx_type == "transfer":
-            other_accounts = [a for a in accounts if a.id != account_id]
-            if other_accounts:
-                to_account_id = st.selectbox(
-                    "Chuyển đến",
-                    options=[a.id for a in other_accounts],
-                    format_func=lambda x: next((a.name for a in other_accounts if a.id == x), ""),
-                )
-
-        tx_date = st.date_input("Ngày", value=date.today())
-        tx_time = st.time_input("Giờ", value=datetime.now().time())
-        description = st.text_input("Mô tả / Ghi chú")
-
-        if st.form_submit_button("✅ Thêm giao dịch", use_container_width=True):
-            if amount <= 0:
-                st.error("Số tiền phải lớn hơn 0")
-            else:
-                from schemas.transaction import TransactionCreate
-                tx_datetime = datetime.combine(tx_date, tx_time)
-                data = TransactionCreate(
-                    type=tx_type,
-                    amount=amount,
-                    account_id=account_id,
-                    to_account_id=to_account_id,
-                    category_id=category_id,
-                    transaction_date=tx_datetime,
-                    description=description or None,
-                )
-                ok, msg = TransactionService.create_transaction(user_id, data)
-                if ok:
-                    st.success(msg)
-                    st.rerun()
-                else:
-                    st.error(msg)
-    st.markdown('</div>', unsafe_allow_html=True)

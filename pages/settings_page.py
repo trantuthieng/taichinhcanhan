@@ -1,181 +1,118 @@
-"""Settings page - Cài đặt ứng dụng."""
+"""Settings – Cài đặt ứng dụng."""
 
 import streamlit as st
-import os
 
 from services.settings_service import SettingsService
 from services.auth_service import AuthService
-from services.backup_service import BackupService
-from services.fx_service import FxService
-from services.gold_service import GoldService
-from ui.components import section_header, empty_state, page_title
+from ui.components import page_header
+from utils.constants import CURRENCIES
 
 
 def render_settings():
-    """Render trang cài đặt."""
     user_id = st.session_state["user_id"]
+    username = st.session_state.get("username", "")
+    page_header("Cài đặt", "⚙️")
 
-    page_title("Cài đặt", "⚙️", "Tùy chỉnh ứng dụng")
+    settings = SettingsService.get_all_settings(user_id)
 
-    tab_general, tab_password, tab_backup, tab_provider = st.tabs(
-        ["🔧 Chung", "🔑 Mật khẩu", "💾 Sao lưu", "🌐 Nhà cung cấp"]
-    )
+    tab_general, tab_sync, tab_pw, tab_about = st.tabs([
+        "🌐 Chung", "🔄 Đồng bộ", "🔑 Mật khẩu", "ℹ️ Thông tin",
+    ])
 
+    # ── General ──
     with tab_general:
-        _render_general_settings(user_id)
+        with st.form("settings_general"):
+            currency = st.selectbox(
+                "Đơn vị tiền tệ mặc định",
+                CURRENCIES,
+                index=CURRENCIES.index(settings.get("currency", "VND")),
+            )
+            lang_options = ["vi", "en"]
+            lang_labels = {"vi": "Tiếng Việt", "en": "English"}
+            language = st.selectbox(
+                "Ngôn ngữ",
+                lang_options,
+                index=lang_options.index(settings.get("language", "vi")),
+                format_func=lambda x: lang_labels.get(x, x),
+            )
+            date_fmt_options = ["dd/mm/yyyy", "mm/dd/yyyy", "yyyy-mm-dd"]
+            date_format = st.selectbox(
+                "Định dạng ngày",
+                date_fmt_options,
+                index=date_fmt_options.index(settings.get("date_format", "dd/mm/yyyy")),
+            )
+            page_size = st.number_input(
+                "Số bản ghi mỗi trang",
+                min_value=10, max_value=100, step=10,
+                value=int(settings.get("page_size", 20)),
+            )
 
-    with tab_password:
-        _render_change_password(user_id)
+            if st.form_submit_button("💾 Lưu cài đặt", use_container_width=True):
+                ok = SettingsService.bulk_update(user_id, {
+                    "currency": currency,
+                    "language": language,
+                    "date_format": date_format,
+                    "page_size": str(page_size),
+                })
+                st.success("Đã lưu cài đặt") if ok else st.error("Lỗi khi lưu")
 
-    with tab_backup:
-        _render_backup(user_id)
+    # ── Auto sync ──
+    with tab_sync:
+        with st.form("settings_sync"):
+            fx_sync = st.toggle(
+                "Tự động cập nhật tỷ giá",
+                value=settings.get("fx_auto_sync", "true") == "true",
+            )
+            gold_sync = st.toggle(
+                "Tự động cập nhật giá vàng",
+                value=settings.get("gold_auto_sync", "true") == "true",
+            )
+            auto_backup = st.toggle(
+                "Tự động sao lưu dữ liệu",
+                value=settings.get("auto_backup", "true") == "true",
+            )
 
-    with tab_provider:
-        _render_provider_status(user_id)
+            if st.form_submit_button("💾 Lưu", use_container_width=True):
+                ok = SettingsService.bulk_update(user_id, {
+                    "fx_auto_sync": "true" if fx_sync else "false",
+                    "gold_auto_sync": "true" if gold_sync else "false",
+                    "auto_backup": "true" if auto_backup else "false",
+                })
+                st.success("Đã lưu") if ok else st.error("Lỗi khi lưu")
 
+    # ── Password ──
+    with tab_pw:
+        st.markdown(f"**Tài khoản:** {username}")
+        with st.form("change_pw_form"):
+            old_pw = st.text_input("Mật khẩu hiện tại", type="password")
+            new_pw = st.text_input("Mật khẩu mới", type="password")
+            confirm_pw = st.text_input("Nhập lại mật khẩu mới", type="password")
 
-def _render_general_settings(user_id: int):
-    """Cài đặt chung."""
-    current = SettingsService.get_all_settings(user_id)
-
-    with st.form("settings_form"):
-        currency = st.selectbox("Đơn vị tiền tệ mặc định",
-                                 ["VND", "USD", "EUR"],
-                                 index=["VND", "USD", "EUR"].index(current.get("currency", "VND")))
-
-        date_format = st.selectbox("Định dạng ngày",
-                                    ["dd/mm/yyyy", "yyyy-mm-dd"],
-                                    index=0 if current.get("date_format") == "dd/mm/yyyy" else 1)
-
-        page_size = st.selectbox("Số bản ghi/trang",
-                                  ["10", "20", "50", "100"],
-                                  index=["10", "20", "50", "100"].index(current.get("page_size", "20")))
-
-        auto_backup = st.checkbox("Tự động sao lưu", value=current.get("auto_backup") == "true")
-        fx_auto = st.checkbox("Tự động cập nhật tỷ giá", value=current.get("fx_auto_sync") == "true")
-        gold_auto = st.checkbox("Tự động cập nhật giá vàng", value=current.get("gold_auto_sync") == "true")
-
-        if st.form_submit_button("💾 Lưu cài đặt", use_container_width=True):
-            new_settings = {
-                "currency": currency,
-                "date_format": date_format,
-                "page_size": page_size,
-                "auto_backup": "true" if auto_backup else "false",
-                "fx_auto_sync": "true" if fx_auto else "false",
-                "gold_auto_sync": "true" if gold_auto else "false",
-            }
-            ok = SettingsService.bulk_update(user_id, new_settings)
-            if ok:
-                st.success("Đã lưu cài đặt")
-            else:
-                st.error("Lỗi khi lưu cài đặt")
-
-
-def _render_change_password(user_id: int):
-    """Đổi mật khẩu."""
-    with st.form("change_pwd_form"):
-        current_pwd = st.text_input("Mật khẩu hiện tại", type="password")
-        new_pwd = st.text_input("Mật khẩu mới", type="password")
-        confirm_pwd = st.text_input("Xác nhận mật khẩu mới", type="password")
-
-        if st.form_submit_button("🔑 Đổi mật khẩu", use_container_width=True):
-            if not current_pwd or not new_pwd:
-                st.error("Vui lòng nhập đầy đủ")
-            elif new_pwd != confirm_pwd:
-                st.error("Mật khẩu mới không khớp")
-            elif len(new_pwd) < 6:
-                st.error("Mật khẩu mới ít nhất 6 ký tự")
-            else:
-                ok, msg = AuthService.change_password(user_id, current_pwd, new_pwd)
-                if ok:
-                    st.success(msg)
+            if st.form_submit_button("🔑 Đổi mật khẩu", use_container_width=True):
+                if not old_pw or not new_pw:
+                    st.error("Vui lòng nhập đầy đủ thông tin")
+                elif new_pw != confirm_pw:
+                    st.error("Mật khẩu mới không khớp")
+                elif len(new_pw) < 6:
+                    st.error("Mật khẩu mới phải ít nhất 6 ký tự")
                 else:
-                    st.error(msg)
+                    ok, msg = AuthService.change_password(user_id, old_pw, new_pw)
+                    st.success(msg) if ok else st.error(msg)
 
+    # ── About ──
+    with tab_about:
+        st.markdown("""
+        ### 💰 Quản lý Tài chính Cá nhân
+        **Phiên bản:** 2.0
 
-def _render_backup(user_id: int):
-    """Sao lưu & khôi phục."""
-    section_header("Sao lưu", "💾")
+        Ứng dụng quản lý tài chính cá nhân toàn diện:
+        - 🏦 Quản lý tài khoản & số dư
+        - 💳 Theo dõi thu chi hàng ngày
+        - 📋 Ngân sách & mục tiêu tiết kiệm
+        - 📈 Đầu tư chứng khoán, vàng
+        - 💱 Cập nhật tỷ giá ngoại tệ
+        - 📉 Báo cáo & phân tích chi tiết
 
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("📦 Tạo bản sao lưu", use_container_width=True):
-            with st.spinner("Đang sao lưu..."):
-                ok, msg = BackupService.create_backup("manual")
-                if ok:
-                    st.success(f"Đã sao lưu: {os.path.basename(msg)}")
-                else:
-                    st.error(msg)
-
-    with col2:
-        db_path = BackupService.export_db()
-        if os.path.exists(db_path):
-            with open(db_path, "rb") as f:
-                st.download_button(
-                    "📥 Tải database",
-                    data=f.read(),
-                    file_name="finance.db",
-                    mime="application/octet-stream",
-                    use_container_width=True,
-                )
-
-    st.markdown("---")
-    section_header("Danh sách bản sao lưu", "📋")
-    backups = BackupService.list_backups()
-    if backups:
-        for b in backups:
-            col_a, col_b, col_c = st.columns([3, 1, 1])
-            with col_a:
-                st.write(f"📁 {b['name']} ({b['size_mb']} MB)")
-            with col_b:
-                st.write(b["date"].strftime("%d/%m/%Y %H:%M"))
-            with col_c:
-                if st.button("🔄 Khôi phục", key=f"restore_{b['name']}"):
-                    ok, msg = BackupService.restore_backup(b["path"])
-                    if ok:
-                        st.success(msg)
-                    else:
-                        st.error(msg)
-    else:
-        empty_state("Chưa có bản sao lưu", "💾")
-
-
-def _render_provider_status(user_id: int):
-    """Trạng thái nhà cung cấp dữ liệu."""
-    section_header("Trạng thái API", "🌐")
-
-    # Token status
-    from services.providers.token_manager import TokenManager
-    tm = TokenManager()
-    status = tm.get_token_status()
-
-    for scope, info in status.items():
-        if info.get("has_token"):
-            remaining = info.get("remaining_seconds", 0)
-            if remaining > 60:
-                st.success(f"✅ **{scope}**: Token còn hạn ({remaining // 60} phút)")
-            else:
-                st.warning(f"⚠️ **{scope}**: Token sắp hết hạn ({remaining}s)")
-        else:
-            st.info(f"ℹ️ **{scope}**: Chưa có token")
-
-    st.markdown("---")
-
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("🔄 Cập nhật tỷ giá", use_container_width=True):
-            with st.spinner("Đang cập nhật..."):
-                result = FxService.sync_rates()
-                if result.success:
-                    st.success(result.message)
-                else:
-                    st.warning(result.message)
-
-    with col2:
-        if st.button("🔄 Cập nhật giá vàng", use_container_width=True):
-            with st.spinner("Đang cập nhật..."):
-                result = GoldService.sync_prices()
-                if result.success:
-                    st.success(result.message)
-                else:
-                    st.warning(result.message)
+        ---
+        *Được phát triển với Streamlit & Python*
+        """)

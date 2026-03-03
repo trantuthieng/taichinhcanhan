@@ -1,146 +1,114 @@
-"""Gold page - Giá vàng & quản lý vàng."""
+"""Gold – Vàng."""
 
 import streamlit as st
 from datetime import date
 
 from services.gold_service import GoldService
-from ui.components import section_header, empty_state, page_title, metric_card
-from utils.formatters import format_currency, format_number, format_weight, short_amount
+from ui.components import page_header, empty_state
+from utils.formatters import format_currency
 from utils.constants import GOLD_TYPES
 
 
 def render_gold():
-    """Render trang vàng."""
     user_id = st.session_state["user_id"]
+    page_header("Vàng", "🥇")
 
-    page_title("Vàng", "🥇", "Giá vàng & quản lý")
+    tab_holdings, tab_prices, tab_add = st.tabs([
+        "📊 Tài sản vàng", "💲 Giá vàng", "➕ Thêm vàng",
+    ])
 
-    tab_prices, tab_holdings, tab_add = st.tabs(["📊 Giá vàng", "💰 Vàng nắm giữ", "➕ Thêm vàng"])
-
-    with tab_prices:
-        _render_gold_prices(user_id)
-
+    # ── Holdings ──
     with tab_holdings:
-        _render_gold_holdings(user_id)
+        total_val = GoldService.get_total_gold_value(user_id)
+        holdings_pnl = GoldService.get_holdings_with_pnl(user_id) or []
 
-    with tab_add:
-        _render_add_holding(user_id)
+        c1, c2 = st.columns(2)
+        c1.metric("Tổng giá trị vàng", format_currency(total_val))
+        c2.metric("Số lô", len(holdings_pnl))
 
+        if not holdings_pnl:
+            empty_state("Chưa có vàng", "🥇")
+        else:
+            rows = []
+            for h in holdings_pnl:
+                holding = h["holding"]
+                rows.append({
+                    "Loại": holding.gold_type,
+                    "SL": f"{holding.quantity} {holding.unit}",
+                    "Giá mua": format_currency(holding.buy_price),
+                    "Giá hiện tại": format_currency(h.get("current_price", 0)),
+                    "Giá trị": format_currency(h.get("market_value", 0)),
+                    "Lãi/Lỗ": format_currency(h.get("pnl", 0)),
+                    "% Lãi/Lỗ": f"{h.get('pnl_pct', 0):+.1f}%",
+                })
+            st.dataframe(rows, use_container_width=True, hide_index=True)
 
-def _render_gold_prices(user_id: int):
-    """Bảng giá vàng."""
-    col1, col2 = st.columns([3, 1])
-    with col2:
-        if st.button("🔄 Đồng bộ giá vàng", use_container_width=True):
-            with st.spinner("Đang cập nhật..."):
+            # Delete
+            with st.expander("🗑️ Xoá lô vàng"):
+                h_options = {
+                    f"{h['holding'].gold_type} – {h['holding'].quantity} {h['holding'].unit}": h["holding"].id
+                    for h in holdings_pnl
+                }
+                sel = st.selectbox("Chọn lô", list(h_options.keys()))
+                if st.button("Xoá", type="primary"):
+                    ok, msg = GoldService.delete_holding(user_id, h_options[sel])
+                    st.success(msg) if ok else st.error(msg)
+                    if ok:
+                        st.rerun()
+
+    # ── Prices ──
+    with tab_prices:
+        prices = GoldService.get_latest_prices() or []
+        if not prices:
+            empty_state("Chưa có dữ liệu giá vàng", "💲")
+            if st.button("🔄 Đồng bộ giá vàng"):
                 result = GoldService.sync_prices()
                 if result.success:
-                    st.success(result.message)
+                    st.success(f"Đã cập nhật {len(result.data)} loại vàng")
                     st.rerun()
                 else:
-                    st.warning(result.message)
-
-    prices = GoldService.get_latest_prices()
-    if not prices:
-        empty_state("Chưa có dữ liệu giá vàng. Nhấn 'Đồng bộ giá vàng' để cập nhật.", "🥇")
-        return
-
-    import pandas as pd
-    rows = []
-    for p in prices:
-        rows.append({
-            "Loại vàng": p["gold_type"],
-            "Mua": format_currency(p["buy_price"]) if p["buy_price"] else "-",
-            "Bán": format_currency(p["sell_price"]) if p["sell_price"] else "-",
-            "Đơn vị": p.get("unit") or "lượng",
-            "Nguồn": p.get("source") or "",
-            "Cập nhật": p["fetched_at"].strftime("%H:%M %d/%m") if p.get("fetched_at") else "",
-        })
-
-    df = pd.DataFrame(rows)
-    st.dataframe(df, use_container_width=True, hide_index=True)
-
-    if prices:
-        fetched_times = [p["fetched_at"] for p in prices if p.get("fetched_at")]
-        if fetched_times:
-            last = max(fetched_times)
-            st.caption(f"🕐 Cập nhật lần cuối: {last.strftime('%H:%M:%S %d/%m/%Y')}")
-
-
-def _render_gold_holdings(user_id: int):
-    """Danh sách vàng nắm giữ."""
-    holdings = GoldService.get_holdings_with_pnl(user_id)
-
-    if not holdings:
-        empty_state("Chưa có vàng nắm giữ", "🥇")
-        return
-
-    total_value = sum(h.get("market_value", 0) for h in holdings)
-    total_cost = sum(h.get("cost", 0) for h in holdings)
-    total_pnl = total_value - total_cost
-
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        metric_card("Giá trị thị trường", short_amount(total_value), card_type="stock", icon="💰")
-    with c2:
-        metric_card("Giá vốn", short_amount(total_cost), card_type="balance", icon="💳")
-    with c3:
-        pnl_type = "income" if total_pnl >= 0 else "expense"
-        pnl_icon = "📈" if total_pnl >= 0 else "📉"
-        metric_card("Lãi/Lỗ", short_amount(total_pnl), card_type=pnl_type, icon=pnl_icon)
-
-    st.markdown("---")
-
-    for h in holdings:
-        holding = h["holding"]
-        pnl = h.get("pnl", 0)
-        pnl_icon = "📈" if pnl >= 0 else "📉"
-
-        with st.expander(
-            f"{pnl_icon} {holding.gold_type} - {holding.quantity} {holding.unit} - P&L: {format_currency(pnl)}",
-            expanded=False,
-        ):
-            st.write(f"**Loại:** {holding.gold_type}")
-            st.write(f"**Số lượng:** {holding.quantity} {holding.unit}")
-            st.write(f"**Giá mua:** {format_currency(holding.buy_price)}")
-            st.write(f"**Ngày mua:** {holding.buy_date.strftime('%d/%m/%Y') if holding.buy_date else '-'}")
-            st.write(f"**Giá vốn:** {format_currency(h.get('cost', 0))}")
-            st.write(f"**Giá trị hiện tại:** {format_currency(h.get('market_value', 0))}")
-            st.write(f"**Lãi/Lỗ:** {format_currency(pnl)}")
-
-            if st.button("🗑️ Bán / Xóa", key=f"del_gold_{holding.id}"):
-                ok, msg = GoldService.delete_holding(user_id, holding.id)
-                if ok:
-                    st.success(msg)
+                    st.error(result.message)
+        else:
+            rows = [{
+                "Loại": p["gold_type"],
+                "Mua": format_currency(p.get("buy_price", 0)),
+                "Bán": format_currency(p.get("sell_price", 0)),
+                "Nguồn": p.get("source", ""),
+            } for p in prices]
+            st.dataframe(rows, use_container_width=True, hide_index=True)
+            if st.button("🔄 Cập nhật giá"):
+                result = GoldService.sync_prices()
+                if result.success:
+                    st.success("Đã cập nhật giá vàng")
                     st.rerun()
                 else:
-                    st.error(msg)
+                    st.error(result.message)
 
+    # ── Add ──
+    with tab_add:
+        with st.form("add_gold_form"):
+            col1, col2 = st.columns(2)
+            with col1:
+                gold_type = st.selectbox("Loại vàng *", GOLD_TYPES)
+                quantity = st.number_input("Số lượng *", min_value=0.0, step=0.1, value=1.0)
+                unit = st.selectbox("Đơn vị", ["lượng", "chỉ"])
+            with col2:
+                buy_price = st.number_input("Giá mua (VND/đơn vị) *",
+                                            min_value=0.0, step=100000.0)
+                buy_dt = st.date_input("Ngày mua", value=date.today())
 
-def _render_add_holding(user_id: int):
-    """Form thêm vàng."""
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    section_header("Thêm vàng nắm giữ", "🥇")
-    with st.form("add_gold_form"):
-        gold_type = st.selectbox("Loại vàng *", GOLD_TYPES)
-        quantity = st.number_input("Số lượng *", min_value=0.0, step=0.1, value=1.0)
-        unit = st.selectbox("Đơn vị", ["lượng", "chỉ", "gram"])
-        buy_price = st.number_input("Giá mua (VND/đơn vị) *", min_value=0.0, step=100000.0, format="%.0f")
-        buy_date = st.date_input("Ngày mua", value=date.today())
-        notes = st.text_area("Ghi chú")
+            notes = st.text_area("Ghi chú", height=60)
 
-        if st.form_submit_button("✅ Thêm vàng", use_container_width=True):
-            if quantity <= 0:
-                st.error("Số lượng phải lớn hơn 0")
-            elif buy_price <= 0:
-                st.error("Giá mua phải lớn hơn 0")
-            else:
-                ok, msg = GoldService.add_holding(
-                    user_id, gold_type, quantity, unit, buy_price, buy_date, notes=notes or None
-                )
-                if ok:
-                    st.success(msg)
-                    st.rerun()
+            if st.form_submit_button("✅ Thêm vàng", use_container_width=True):
+                if quantity <= 0 or buy_price <= 0:
+                    st.error("Số lượng và giá mua phải lớn hơn 0")
                 else:
-                    st.error(msg)
-    st.markdown('</div>', unsafe_allow_html=True)
+                    ok, msg = GoldService.add_holding(
+                        user_id, gold_type, quantity, unit, buy_price,
+                        buy_date=buy_dt, notes=notes.strip() or None,
+                    )
+                    if ok:
+                        st.success(msg)
+                        st.rerun()
+                    else:
+                        st.error(msg)

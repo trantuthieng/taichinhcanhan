@@ -1,143 +1,119 @@
-"""Savings page - Quản lý sổ tiết kiệm."""
+"""Savings – Sổ tiết kiệm."""
 
 import streamlit as st
-from datetime import date, datetime
+from datetime import date
 
 from services.savings_service import SavingsService
-from ui.components import section_header, empty_state, status_badge, progress_bar, page_title, metric_card
-from utils.formatters import format_currency, format_date, format_percentage, short_amount, DEPOSIT_STATUS_LABELS
-from utils.constants import SAVINGS_TERMS, INTEREST_PAYMENT_METHODS, VN_BANKS
+from services.account_service import AccountService
+from schemas.savings import SavingsDepositCreate
+from ui.components import page_header, empty_state, progress_bar
+from utils.formatters import format_currency, format_date, DEPOSIT_STATUS_LABELS
+from utils.constants import SAVINGS_TERMS, INTEREST_PAYMENT_METHODS, VN_BANKS, CURRENCIES
 
 
 def render_savings():
-    """Render trang tiết kiệm."""
     user_id = st.session_state["user_id"]
+    page_header("Tiết kiệm", "🏧")
 
-    page_title("Sổ tiết kiệm", "🏧", "Quản lý tiền gửi")
+    tab_list, tab_add = st.tabs(["📋 Danh sách", "➕ Gửi tiết kiệm"])
 
-    tab_list, tab_add = st.tabs(["📋 Danh sách", "➕ Gửi mới"])
-
+    # ── List ──
     with tab_list:
-        _render_savings_list(user_id)
+        deposits = SavingsService.get_deposits(user_id) or []
+        total = SavingsService.get_total_savings(user_id)
 
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Tổng tiết kiệm", format_currency(total))
+        c2.metric("Số sổ", len(deposits))
+        c3.metric("Đang hoạt động", sum(1 for d in deposits if d.status == "active"))
+
+        if not deposits:
+            empty_state("Chưa có sổ tiết kiệm", "🏧")
+        else:
+            for d in deposits:
+                detail = SavingsService.get_deposit_detail(d.id)
+                status_label = DEPOSIT_STATUS_LABELS.get(d.status, d.status)
+                badge = "🟢" if d.status == "active" else ("🔵" if d.status == "matured" else "⚫")
+
+                with st.expander(
+                    f"{badge} {d.bank_name} – {format_currency(d.principal_amount, d.currency)} "
+                    f"– {d.interest_rate}%/năm – {status_label}"
+                ):
+                    col1, col2 = st.columns(2)
+                    col1.write(f"**Gốc:** {format_currency(d.principal_amount, d.currency)}")
+                    col1.write(f"**Lãi suất:** {d.interest_rate}%/năm")
+                    col1.write(f"**Kỳ hạn:** {d.term_months} tháng")
+                    col2.write(f"**Ngày gửi:** {format_date(d.open_date)}")
+                    col2.write(f"**Đáo hạn:** {format_date(d.maturity_date)}")
+                    col2.write(f"**Trạng thái:** {status_label}")
+
+                    if detail:
+                        interest = detail.get("interest", {})
+                        st.info(
+                            f"💰 Lãi dự kiến: **{format_currency(interest.get('net_interest', 0))}** "
+                            f"| Tổng nhận: **{format_currency(interest.get('total_at_maturity', 0))}**"
+                        )
+                        if detail.get("days_remaining") is not None and detail["days_remaining"] > 0:
+                            st.caption(f"Còn {detail['days_remaining']} ngày đến đáo hạn")
+
+                    if d.status == "active":
+                        bc1, bc2 = st.columns(2)
+                        with bc1:
+                            if st.button("🔒 Tất toán", key=f"close_{d.id}"):
+                                ok, msg = SavingsService.close_deposit(user_id, d.id, early=True)
+                                st.success(msg) if ok else st.error(msg)
+                                if ok:
+                                    st.rerun()
+                        with bc2:
+                            if st.button("🔄 Tái tục", key=f"renew_{d.id}"):
+                                ok, msg = SavingsService.renew_deposit(user_id, d.id)
+                                st.success(msg) if ok else st.error(msg)
+                                if ok:
+                                    st.rerun()
+
+    # ── Add ──
     with tab_add:
-        _render_add_deposit(user_id)
+        with st.form("add_savings_form"):
+            col1, col2 = st.columns(2)
+            with col1:
+                bank = st.selectbox("Ngân hàng *", VN_BANKS)
+                principal = st.number_input("Số tiền gửi *", min_value=0.0, step=1000000.0)
+                currency = st.selectbox("Tiền tệ", CURRENCIES, index=0)
+                open_dt = st.date_input("Ngày gửi", value=date.today())
 
-
-def _render_savings_list(user_id: int):
-    """Danh sách sổ tiết kiệm."""
-    filter_status = st.selectbox("Trạng thái", ["active", "matured", "closed", "all"],
-                                  format_func=lambda x: {"active": "Đang gửi", "matured": "Đã đáo hạn",
-                                                         "closed": "Đã tất toán", "all": "Tất cả"}.get(x, x))
-
-    status = filter_status if filter_status != "all" else None
-    deposits = SavingsService.get_deposits(user_id, status)
-
-    if not deposits:
-        empty_state("Chưa có sổ tiết kiệm nào", "🏧")
-        return
-
-    # Tổng gửi tiết kiệm
-    total_deposit = sum(d.principal_amount for d in deposits if d.status == "active")
-    active_count = sum(1 for d in deposits if d.status == "active")
-    mc1, mc2 = st.columns(2)
-    with mc1:
-        metric_card("Tổng tiền gửi", short_amount(total_deposit), card_type="savings", icon="💰")
-    with mc2:
-        metric_card("Sổ đang hoạt động", str(active_count), card_type="income", icon="📝")
-
-    # Cảnh báo sắp đáo hạn
-    maturing = SavingsService.get_maturing_soon(user_id, days=7)
-    if maturing:
-        st.warning(f"⏰ Có {len(maturing)} sổ sắp đáo hạn trong 7 ngày tới!")
-
-    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
-
-    section_header("Chi tiết sổ tiết kiệm", "📝")
-    for d in deposits:
-        status_icon = {"active": "🟢", "matured": "🟡", "closed": "⚪"}.get(d.status, "⚪")
-        deposit_detail = SavingsService.get_deposit_detail(d.id)
-        expected = deposit_detail["interest"]["net_interest"] if deposit_detail else 0
-
-        with st.expander(
-            f"{status_icon} {d.bank_name} - {format_currency(d.principal_amount)} - {d.interest_rate}%/năm",
-            expanded=False,
-        ):
-            status_badge(d.status)
-            c1, c2 = st.columns(2)
-            with c1:
-                st.write(f"**Ngân hàng:** {d.bank_name}")
-                st.write(f"**Gốc:** {format_currency(d.principal_amount)}")
-                st.write(f"**Lãi suất:** {d.interest_rate}%/năm")
-                st.write(f"**Kỳ hạn:** {d.term_months} tháng")
-                st.write(f"**Trả lãi:** {INTEREST_PAYMENT_METHODS.get(d.interest_type, d.interest_type)}")
-            with c2:
-                st.write(f"**Ngày gửi:** {format_date(d.open_date)}")
-                st.write(f"**Ngày đáo hạn:** {format_date(d.maturity_date)}")
-                st.write(f"**Lãi dự kiến:** {format_currency(expected)}")
-                if d.notes:
-                    st.write(f"**Ghi chú:** {d.notes}")
-
-            if d.status == "active":
-                col_a, col_b = st.columns(2)
-                with col_a:
-                    if st.button("💰 Tất toán", key=f"close_dep_{d.id}"):
-                        ok, msg = SavingsService.close_deposit(user_id, d.id)
-                        if ok:
-                            st.success(msg)
-                            st.rerun()
-                        else:
-                            st.error(msg)
-                with col_b:
-                    if st.button("🔄 Đáo hạn tái gửi", key=f"renew_dep_{d.id}"):
-                        ok, msg = SavingsService.renew_deposit(user_id, d.id)
-                        if ok:
-                            st.success(msg)
-                            st.rerun()
-                        else:
-                            st.error(msg)
-
-
-def _render_add_deposit(user_id: int):
-    """Form thêm sổ tiết kiệm."""
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    section_header("Gửi sổ tiết kiệm mới", "🏧")
-    with st.form("add_deposit_form"):
-        bank_name = st.selectbox("Ngân hàng *", VN_BANKS)
-        principal = st.number_input("Số tiền gốc *", min_value=0.0, step=1000000.0, format="%.0f")
-        interest_rate = st.number_input("Lãi suất (%/năm) *", min_value=0.0, max_value=20.0,
-                                         step=0.1, value=5.0, format="%.2f")
-        term_months = st.selectbox("Kỳ hạn (tháng) *", SAVINGS_TERMS)
-        interest_payment = st.selectbox("Phương thức trả lãi",
-                                         list(INTEREST_PAYMENT_METHODS.keys()),
-                                         format_func=lambda x: INTEREST_PAYMENT_METHODS[x])
-        start_date = st.date_input("Ngày gửi", value=date.today())
-        is_compound = st.checkbox("Lãi kép (nhập gốc)", value=False)
-        auto_renew = st.checkbox("Tự động tái gửi khi đáo hạn", value=True)
-        notes = st.text_area("Ghi chú")
-
-        if st.form_submit_button("✅ Tạo sổ tiết kiệm", use_container_width=True):
-            if principal <= 0:
-                st.error("Số tiền gốc phải lớn hơn 0")
-            elif interest_rate <= 0:
-                st.error("Lãi suất phải lớn hơn 0")
-            else:
-                from schemas.savings import SavingsDepositCreate
-                data = SavingsDepositCreate(
-                    bank_name=bank_name,
-                    principal_amount=principal,
-                    interest_rate=interest_rate,
-                    term_months=term_months,
-                    interest_type=interest_payment,
-                    open_date=start_date,
-                    compound_interest=is_compound,
-                    auto_renew=auto_renew,
-                    notes=notes or None,
+            with col2:
+                term = st.selectbox("Kỳ hạn (tháng) *", SAVINGS_TERMS, index=5)
+                rate = st.number_input("Lãi suất (%/năm) *", min_value=0.0,
+                                       max_value=30.0, step=0.1, value=5.0)
+                int_type = st.selectbox(
+                    "Hình thức trả lãi",
+                    list(INTEREST_PAYMENT_METHODS.keys()),
+                    format_func=lambda x: INTEREST_PAYMENT_METHODS[x],
                 )
-                ok, msg, _id = SavingsService.create_deposit(user_id, data)
-                if ok:
-                    st.success(msg)
-                    st.rerun()
+                auto_renew = st.checkbox("Tự động tái tục")
+
+            notes = st.text_area("Ghi chú", height=60)
+
+            if st.form_submit_button("✅ Gửi tiết kiệm", use_container_width=True):
+                if principal <= 0:
+                    st.error("Số tiền phải lớn hơn 0")
+                elif rate <= 0:
+                    st.error("Lãi suất phải lớn hơn 0")
                 else:
-                    st.error(msg)
-    st.markdown('</div>', unsafe_allow_html=True)
+                    data = SavingsDepositCreate(
+                        bank_name=bank,
+                        principal_amount=principal,
+                        currency=currency,
+                        open_date=open_dt,
+                        term_months=term,
+                        interest_rate=rate,
+                        interest_type=int_type,
+                        auto_renew=auto_renew,
+                        notes=notes.strip() or None,
+                    )
+                    ok, msg, _ = SavingsService.create_deposit(user_id, data)
+                    if ok:
+                        st.success(msg)
+                        st.rerun()
+                    else:
+                        st.error(msg)

@@ -1,185 +1,172 @@
-"""Reports page - Báo cáo tài chính."""
+"""Reports – Báo cáo tài chính."""
 
 import streamlit as st
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 from services.report_service import ReportService
-from ui.components import section_header, empty_state, page_title, metric_card
+from ui.components import page_header, empty_state
 from ui.charts import (
-    income_expense_bar, expense_pie, cashflow_line,
-    daily_expense_bar, account_balance_donut,
+    income_expense_bar, expense_pie, cashflow_line, daily_expense_bar,
 )
-from utils.formatters import format_currency, short_amount
-from utils.helpers import get_month_range, get_quarter_range, get_year_range
+from utils.formatters import format_currency
 
 
 def render_reports():
-    """Render trang báo cáo."""
     user_id = st.session_state["user_id"]
-    now = datetime.now()
+    page_header("Báo cáo tài chính", "📉")
 
-    page_title("Báo cáo tài chính", "📈", "Phân tích thu chi")
-
-    tab_monthly, tab_charts, tab_export = st.tabs(["📊 Tổng hợp", "📈 Biểu đồ", "📥 Xuất file"])
-
-    with tab_monthly:
-        _render_summary(user_id, now)
-
-    with tab_charts:
-        _render_charts(user_id, now)
-
-    with tab_export:
-        _render_export(user_id, now)
-
-
-def _render_summary(user_id: int, now: datetime):
-    """Báo cáo tổng hợp."""
-    # Chọn khoảng thời gian
-    period = st.selectbox("Kỳ báo cáo", ["Tháng này", "Tháng trước", "Quý này", "Năm nay", "Tùy chọn"])
-
-    if period == "Tháng này":
-        start, end = get_month_range(now.year, now.month)
-    elif period == "Tháng trước":
-        m = now.month - 1 if now.month > 1 else 12
-        y = now.year if now.month > 1 else now.year - 1
-        start, end = get_month_range(y, m)
-    elif period == "Quý này":
-        q = (now.month - 1) // 3 + 1
-        start, end = get_quarter_range(now.year, q)
-    elif period == "Năm nay":
-        start, end = get_year_range(now.year)
+    # ── Date range filter ──
+    col_f1, col_f2, col_f3 = st.columns([1, 1, 1])
+    with col_f1:
+        preset = st.selectbox("Khoảng thời gian", [
+            "Tháng này", "Tháng trước", "Quý này", "Năm nay", "Tuỳ chọn",
+        ])
+    today = date.today()
+    if preset == "Tháng này":
+        start_dt = today.replace(day=1)
+        end_dt = today
+    elif preset == "Tháng trước":
+        first = today.replace(day=1)
+        end_dt = first - timedelta(days=1)
+        start_dt = end_dt.replace(day=1)
+    elif preset == "Quý này":
+        q = (today.month - 1) // 3
+        start_dt = date(today.year, q * 3 + 1, 1)
+        end_dt = today
+    elif preset == "Năm nay":
+        start_dt = date(today.year, 1, 1)
+        end_dt = today
     else:
-        col1, col2 = st.columns(2)
-        with col1:
-            sd = st.date_input("Từ ngày", value=date(now.year, now.month, 1), key="rpt_start")
-        with col2:
-            ed = st.date_input("Đến ngày", value=date.today(), key="rpt_end")
-        start = datetime.combine(sd, datetime.min.time())
-        end = datetime.combine(ed, datetime.max.time())
+        with col_f2:
+            start_dt = st.date_input("Từ ngày", value=today.replace(day=1))
+        with col_f3:
+            end_dt = st.date_input("Đến ngày", value=today)
 
-    # Thu chi tổng quan
+    start = datetime.combine(start_dt, datetime.min.time())
+    end = datetime.combine(end_dt, datetime.max.time())
+
+    st.divider()
+
+    # ── Summary metrics ──
     summary = ReportService.get_income_expense_summary(user_id, start, end)
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Thu nhập", format_currency(summary.get("income", 0)))
+    c2.metric("Chi tiêu", format_currency(summary.get("expense", 0)))
+    c3.metric("Chuyển khoản", format_currency(summary.get("transfer", 0)))
+    net = summary.get("net", 0)
+    c4.metric("Ròng", format_currency(net), "Dương" if net >= 0 else "Âm")
 
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        metric_card("Thu nhập", short_amount(summary["income"]), card_type="income")
-    with c2:
-        metric_card("Chi tiêu", short_amount(summary["expense"]), card_type="expense")
-    with c3:
-        metric_card("Ròng", short_amount(summary["net"]), card_type="balance")
+    # ── Tabs ──
+    tab_trend, tab_cat, tab_daily, tab_export = st.tabs([
+        "📈 Xu hướng", "📊 Theo danh mục", "📅 Theo ngày", "📤 Xuất file",
+    ])
 
-    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
-
-    # Chi tiêu theo danh mục
-    section_header("Chi tiêu theo danh mục", "🍕")
-    cat_data = ReportService.get_expense_by_category(user_id, start, end)
-    if cat_data:
-        for item in cat_data:
-            pct = item["total"] / max(summary["expense"], 1) * 100
-            st.markdown(
-                f'<div style="display:flex;justify-content:space-between;padding:0.4rem 0;'
-                f'border-bottom:1px solid rgba(255,255,255,0.05);">' 
-                f'<span style="color:var(--text-secondary);">{item["category"]}</span>'
-                f'<span style="color:var(--text-primary);font-weight:600;">{format_currency(item["total"])} ({pct:.1f}%)</span>'
-                f'</div>',
-                unsafe_allow_html=True,
+    # ── Monthly trend ──
+    with tab_trend:
+        trend = ReportService.get_monthly_trend(user_id, months=12)
+        if not trend:
+            empty_state("Chưa có dữ liệu xu hướng", "📈")
+        else:
+            st.plotly_chart(
+                income_expense_bar(trend),
+                use_container_width=True,
+                config={"displayModeBar": False},
             )
-    else:
-        st.info("Chưa có dữ liệu chi tiêu")
+            st.plotly_chart(
+                cashflow_line(trend),
+                use_container_width=True,
+                config={"displayModeBar": False},
+            )
 
-    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
-
-    # Chi tiêu chi tiết theo danh mục con
-    section_header("Chi tiết danh mục con", "📋")
-    sub_data = ReportService.get_expense_by_subcategory(user_id, start, end)
-    if sub_data:
-        import pandas as pd
-        df = pd.DataFrame(sub_data)
-        df.columns = ["Nhóm", "Danh mục", "Số tiền"]
-        df["Số tiền"] = df["Số tiền"].apply(lambda x: format_currency(x))
-        st.dataframe(df, use_container_width=True, hide_index=True)
-
-    # Số dư tài khoản
-    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
-    section_header("Số dư tài khoản", "🏦")
-    accounts = ReportService.get_account_balances(user_id)
-    if accounts:
-        for a in accounts:
-            st.write(f"• **{a['name']}** ({a['type']}): {format_currency(a['balance'], a['currency'])}")
-
-
-def _render_charts(user_id: int, now: datetime):
-    """Biểu đồ phân tích."""
-    start, end = get_month_range(now.year, now.month)
-
-    # Xu hướng thu chi
-    section_header("Xu hướng 6 tháng", "📈")
-    trend = ReportService.get_monthly_trend(user_id, 6)
-    if trend:
-        st.plotly_chart(income_expense_bar(trend), use_container_width=True, config={"displayModeBar": False})
-        st.plotly_chart(cashflow_line(trend), use_container_width=True, config={"displayModeBar": False})
-    else:
-        empty_state("Chưa có dữ liệu", "📈")
-
-    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
-
-    # Chi tiêu theo danh mục
-    section_header("Chi tiêu tháng này", "🍕")
-    cat_data = ReportService.get_expense_by_category(user_id, start, end)
-    if cat_data:
-        st.plotly_chart(expense_pie(cat_data), use_container_width=True, config={"displayModeBar": False})
-
-    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
-
-    # Chi tiêu hàng ngày
-    section_header("Chi tiêu hàng ngày", "📊")
-    daily = ReportService.get_daily_expenses(user_id, start, end)
-    if daily:
-        st.plotly_chart(daily_expense_bar(daily), use_container_width=True, config={"displayModeBar": False})
-
-    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
-
-    # Phân bổ tài sản
-    section_header("Phân bổ tài sản", "🏦")
-    accounts = ReportService.get_account_balances(user_id)
-    if accounts:
-        st.plotly_chart(account_balance_donut(accounts), use_container_width=True, config={"displayModeBar": False})
-
-
-def _render_export(user_id: int, now: datetime):
-    """Xuất file báo cáo."""
-    section_header("Xuất dữ liệu", "📥")
-
-    col1, col2 = st.columns(2)
-    with col1:
-        sd = st.date_input("Từ ngày", value=date(now.year, 1, 1), key="exp_start")
-    with col2:
-        ed = st.date_input("Đến ngày", value=date.today(), key="exp_end")
-
-    start = datetime.combine(sd, datetime.min.time())
-    end = datetime.combine(ed, datetime.max.time())
-
-    col_a, col_b = st.columns(2)
-    with col_a:
-        if st.button("📥 Xuất Excel", use_container_width=True):
-            with st.spinner("Đang xuất..."):
-                data = ReportService.export_transactions_excel(user_id, start, end)
-                st.download_button(
-                    "💾 Tải file Excel",
-                    data=data,
-                    file_name=f"giao_dich_{sd}_{ed}.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    # ── By category ──
+    with tab_cat:
+        cat_data = ReportService.get_expense_by_category(user_id, start, end)
+        if not cat_data:
+            empty_state("Chưa có dữ liệu theo danh mục", "📊")
+        else:
+            ch1, ch2 = st.columns([1, 1])
+            with ch1:
+                st.plotly_chart(
+                    expense_pie(cat_data),
                     use_container_width=True,
+                    config={"displayModeBar": False},
                 )
+            with ch2:
+                rows = [{
+                    "Danh mục": d["category"],
+                    "Số tiền": format_currency(d["total"]),
+                } for d in sorted(cat_data, key=lambda x: x["total"], reverse=True)]
+                st.dataframe(rows, use_container_width=True, hide_index=True)
 
-    with col_b:
-        if st.button("📥 Xuất CSV", use_container_width=True):
-            with st.spinner("Đang xuất..."):
-                data = ReportService.export_transactions_csv(user_id, start, end)
-                st.download_button(
-                    "💾 Tải file CSV",
-                    data=data,
-                    file_name=f"giao_dich_{sd}_{ed}.csv",
-                    mime="text/csv",
-                    use_container_width=True,
-                )
+            # Subcategory breakdown
+            with st.expander("📋 Chi tiết danh mục con"):
+                sub_data = ReportService.get_expense_by_subcategory(user_id, start, end)
+                if sub_data:
+                    sub_rows = [{
+                        "Danh mục": d["category"],
+                        "Danh mục con": d["subcategory"],
+                        "Số tiền": format_currency(d["total"]),
+                    } for d in sorted(sub_data, key=lambda x: x["total"], reverse=True)]
+                    st.dataframe(sub_rows, use_container_width=True, hide_index=True)
+
+    # ── Daily ──
+    with tab_daily:
+        daily = ReportService.get_daily_expenses(user_id, start, end)
+        if not daily:
+            empty_state("Chưa có dữ liệu theo ngày", "📅")
+        else:
+            st.plotly_chart(
+                daily_expense_bar(daily),
+                use_container_width=True,
+                config={"displayModeBar": False},
+            )
+
+    # ── Export ──
+    with tab_export:
+        st.markdown("**Xuất dữ liệu giao dịch**")
+        st.caption(f"Khoảng thời gian: {start_dt.strftime('%d/%m/%Y')} – {end_dt.strftime('%d/%m/%Y')}")
+
+        col_e1, col_e2 = st.columns(2)
+        with col_e1:
+            try:
+                excel_bytes = ReportService.export_transactions_excel(user_id, start, end)
+                if excel_bytes:
+                    st.download_button(
+                        "📥 Tải Excel",
+                        data=excel_bytes,
+                        file_name=f"giao_dich_{start_dt}_{end_dt}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        use_container_width=True,
+                    )
+                else:
+                    st.info("Không có dữ liệu để xuất")
+            except Exception as e:
+                st.error(f"Lỗi xuất Excel: {e}")
+
+        with col_e2:
+            try:
+                csv_text = ReportService.export_transactions_csv(user_id, start, end)
+                if csv_text:
+                    st.download_button(
+                        "📥 Tải CSV",
+                        data=csv_text,
+                        file_name=f"giao_dich_{start_dt}_{end_dt}.csv",
+                        mime="text/csv",
+                        use_container_width=True,
+                    )
+                else:
+                    st.info("Không có dữ liệu để xuất")
+            except Exception as e:
+                st.error(f"Lỗi xuất CSV: {e}")
+
+        # Account balances
+        with st.expander("🏦 Số dư tài khoản"):
+            balances = ReportService.get_account_balances(user_id)
+            if balances:
+                rows = [{
+                    "Tài khoản": b["name"],
+                    "Loại": b["type"],
+                    "Tiền tệ": b["currency"],
+                    "Số dư": format_currency(b["balance"]),
+                } for b in balances]
+                st.dataframe(rows, use_container_width=True, hide_index=True)

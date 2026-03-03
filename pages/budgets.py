@@ -1,158 +1,100 @@
-"""Budgets page - Quản lý ngân sách."""
+"""Budgets – Ngân sách."""
 
 import streamlit as st
 from datetime import datetime
 
 from services.budget_service import BudgetService
 from services.category_service import CategoryService
-from ui.components import section_header, empty_state, progress_bar, page_title, metric_card
-from ui.charts import budget_gauge
-from utils.formatters import format_currency, short_amount
-from utils.helpers import get_month_range
+from ui.components import page_header, empty_state, progress_bar, color_for_pct
+from utils.formatters import format_currency
 
 
 def render_budgets():
-    """Render trang ngân sách."""
     user_id = st.session_state["user_id"]
     now = datetime.now()
 
-    page_title("Ngân sách", "📋", f"Tháng {now.month}/{now.year}")
+    page_header("Ngân sách", "📋", f"Tháng {now.month}/{now.year}")
 
-    tab_view, tab_set = st.tabs(["📊 Theo dõi", "⚙️ Thiết lập"])
-
-    with tab_view:
-        _render_budget_tracking(user_id, now)
-
-    with tab_set:
-        _render_set_budget(user_id, now)
-
-
-def _render_budget_tracking(user_id: int, now: datetime):
-    """Theo dõi ngân sách."""
-    col1, col2 = st.columns(2)
-    with col1:
-        month = st.selectbox("Tháng", range(1, 13), index=now.month - 1, key="bud_month")
-    with col2:
-        year = st.number_input("Năm", min_value=2020, max_value=2100, value=now.year, key="bud_year")
-
-    budgets = BudgetService.get_budgets(user_id, month, year)
-
-    if not budgets:
-        empty_state("Chưa thiết lập ngân sách cho tháng này", "📋")
-        return
-
-    # Summary metrics
-    total_budget = sum(b["budget"].amount for b in budgets)
-    total_spent = sum(b["spent"] for b in budgets)
-    mc1, mc2, mc3 = st.columns(3)
-    with mc1:
-        metric_card("Ngân sách", short_amount(total_budget), card_type="balance", icon="📋")
-    with mc2:
-        metric_card("Đã chi", short_amount(total_spent), card_type="expense", icon="💸")
-    with mc3:
-        remaining = total_budget - total_spent
-        pct_used = total_spent / max(total_budget, 1) * 100
-        r_type = "income" if remaining >= 0 else "expense"
-        metric_card("Còn lại", short_amount(remaining), card_type=r_type, icon="📊")
-
-    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
-    section_header("Chi tiết ngân sách", "📊")
-
-    # Load category names for lookup
-    try:
-        from db.database import get_session
-        from models.category import Category
-        session = get_session()
-        cat_names = {c.id: c.name for c in session.query(Category).filter(Category.user_id == user_id).all()}
-        session.close()
-    except Exception:
-        cat_names = {}
-
-    for b in budgets:
-        budget_obj = b["budget"]
-        label = "Tổng chi tiêu"
-        if budget_obj.category_id:
-            label = cat_names.get(budget_obj.category_id, f"Danh mục #{budget_obj.category_id}")
-
-        spent = b["spent"]
-        budget_amount = budget_obj.amount
-        pct = b["percentage"]
-        remaining = b["remaining"]
-
-        col_a, col_b = st.columns([2, 1])
-        with col_a:
-            st.markdown(f"**{label}**")
-            progress_bar(pct, f"{format_currency(spent)} / {format_currency(budget_amount)} ({pct}%)")
-        with col_b:
-            if b["is_over"]:
-                st.error(f"Vượt {format_currency(abs(remaining))}")
-            else:
-                st.success(f"Còn {format_currency(remaining)}")
-
-        st.markdown("<div style='height:0.5rem'></div>", unsafe_allow_html=True)
-
-
-def _render_set_budget(user_id: int, now: datetime):
-    """Thiết lập ngân sách."""
     cat_service = CategoryService()
-    categories = cat_service.get_categories(user_id)
 
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    section_header("Thiết lập ngân sách", "⚙️")
-    with st.form("set_budget_form"):
-        col1, col2 = st.columns(2)
-        with col1:
-            month = st.selectbox("Tháng", range(1, 13), index=now.month - 1, key="set_bud_month")
-        with col2:
-            year = st.number_input("Năm", min_value=2020, max_value=2100, value=now.year, key="set_bud_year")
+    tab_view, tab_set = st.tabs(["📊 Theo dõi", "➕ Thiết lập"])
 
-        # Chọn category hoặc tổng
-        cat_options = [(None, "📊 Tổng chi tiêu")] + [(c.id, c.name) for c in categories if c.type and c.type.startswith("expense")]
-        selected_cat = st.selectbox(
-            "Áp dụng cho",
-            options=[x[0] for x in cat_options],
-            format_func=lambda x: next((o[1] for o in cat_options if o[0] == x), ""),
-        )
+    # ── View ──
+    with tab_view:
+        month = now.month
+        year = now.year
 
-        amount = st.number_input("Hạn mức (VND)", min_value=0.0, step=500000.0, format="%.0f")
-        notes = st.text_input("Ghi chú")
+        col_m, col_y = st.columns(2)
+        with col_m:
+            month = st.selectbox("Tháng", range(1, 13), index=month - 1,
+                                 format_func=lambda x: f"Tháng {x}")
+        with col_y:
+            year = st.number_input("Năm", min_value=2020, max_value=2030, value=year)
 
-        if st.form_submit_button("✅ Lưu ngân sách", use_container_width=True):
-            if amount <= 0:
-                st.error("Hạn mức phải lớn hơn 0")
-            else:
-                ok, msg = BudgetService.set_budget(user_id, selected_cat, amount, month, year, notes or None)
-                if ok:
-                    st.success(msg)
-                    st.rerun()
+        budgets = BudgetService.get_budgets(user_id, month, year)
+
+        if not budgets:
+            empty_state("Chưa thiết lập ngân sách cho tháng này", "📋")
+        else:
+            total_spent = sum(b["spent"] for b in budgets)
+            total_budget = sum(b["budget"].amount for b in budgets)
+            over_count = sum(1 for b in budgets if b["is_over"])
+
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Tổng ngân sách", format_currency(total_budget))
+            c2.metric("Đã chi", format_currency(total_spent))
+            c3.metric("Vượt ngân sách", f"{over_count} mục" if over_count else "Không có")
+
+            st.markdown("")
+
+            for b in budgets:
+                label = b["budget"].category.name if b["budget"].category_id else "📌 Tổng chi tiêu"
+                pct = b["percentage"]
+                color = color_for_pct(pct)
+                status = "🔴 Vượt!" if b["is_over"] else ("🟡 Cẩn thận" if pct >= 80 else "🟢 Ổn")
+
+                col_l, col_r = st.columns([5, 1])
+                with col_l:
+                    st.markdown(f"**{label}** — {format_currency(b['spent'])} / "
+                                f"{format_currency(b['budget'].amount)}")
+                    progress_bar(pct, 100, color)
+                with col_r:
+                    st.markdown(f"<div style='text-align:center; padding-top:0.3rem;'>"
+                                f"<span style='font-size:1.1rem;'>{pct:.0f}%</span><br>"
+                                f"<span style='font-size:0.75rem;'>{status}</span></div>",
+                                unsafe_allow_html=True)
+
+                # Delete
+                if st.button("🗑️ Xoá", key=f"del_bud_{b['budget'].id}"):
+                    ok, msg = BudgetService.delete_budget(user_id, b["budget"].id)
+                    st.success(msg) if ok else st.error(msg)
+                    if ok:
+                        st.rerun()
+
+    # ── Set budget ──
+    with tab_set:
+        with st.form("set_budget_form"):
+            categories = cat_service.get_expense_categories(user_id) or []
+            cat_id = st.selectbox(
+                "Danh mục",
+                [None] + [c.id for c in categories],
+                format_func=lambda x: "📌 Tổng chi tiêu" if x is None
+                else next((c.name for c in categories if c.id == x), ""),
+            )
+            amount = st.number_input("Ngân sách (VND) *", min_value=0.0, step=100000.0)
+            b_month = st.selectbox("Tháng", range(1, 13), index=now.month - 1,
+                                   format_func=lambda x: f"Tháng {x}", key="b_month")
+            b_year = st.number_input("Năm", min_value=2020, max_value=2030,
+                                     value=now.year, key="b_year")
+            notes = st.text_area("Ghi chú", height=60)
+
+            if st.form_submit_button("✅ Lưu ngân sách", use_container_width=True):
+                if amount <= 0:
+                    st.error("Số tiền phải lớn hơn 0")
                 else:
-                    st.error(msg)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # Danh sách ngân sách đã thiết lập
-    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
-    section_header("Ngân sách đã thiết lập", "📋")
-    budgets = BudgetService.get_budgets(user_id, now.month, now.year)
-    if budgets:
-        # Lookup category names
-        try:
-            from db.database import get_session
-            from models.category import Category
-            session = get_session()
-            cat_names_set = {c.id: c.name for c in session.query(Category).filter(Category.user_id == user_id).all()}
-            session.close()
-        except Exception:
-            cat_names_set = {}
-
-        for b in budgets:
-            budget_obj = b["budget"]
-            col1, col2 = st.columns([4, 1])
-            with col1:
-                label = "Tổng chi tiêu" if not budget_obj.category_id else cat_names_set.get(budget_obj.category_id, f"Danh mục #{budget_obj.category_id}")
-                st.write(f"• {label}: {format_currency(budget_obj.amount)}")
-            with col2:
-                if st.button("🗑️", key=f"del_bud_{budget_obj.id}"):
-                    ok, msg = BudgetService.delete_budget(user_id, budget_obj.id)
+                    ok, msg = BudgetService.set_budget(
+                        user_id, cat_id, amount, b_month, b_year, notes.strip() or None
+                    )
                     if ok:
                         st.success(msg)
                         st.rerun()
