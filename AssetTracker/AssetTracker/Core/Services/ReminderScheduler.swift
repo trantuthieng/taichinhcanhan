@@ -171,4 +171,30 @@ actor ReminderScheduler {
       await scheduleForeignExchangeUpdate(account)
     }
   }
+
+  // note.txt mục 5.3.4 — cảnh báo tỷ lệ sử dụng hạn mức thẻ tín dụng vượt ngưỡng.
+  func notifyCreditUtilization(cardName: String, utilization: Decimal, threshold: Decimal) async {
+    guard utilization > threshold else { return }
+    let week = Calendar.current.component(.weekOfYear, from: .now)
+    let id = "cc-util-\(cardName)-\(week)"
+    let content = UNMutableNotificationContent()
+    content.title = "Tỷ lệ sử dụng hạn mức cao"
+    content.body =
+      "\(cardName) đã dùng \(utilization.rounded(0).description)% hạn mức, cao hơn mức \(threshold.rounded(0).description)%."
+    content.sound = .default
+    try? await center.add(UNNotificationRequest(identifier: id, content: content, trigger: nil))
+  }
+
+  // note.txt mục 5.3.4 — cảnh báo khi ≥3 kỳ liên tiếp chỉ trả tối thiểu (dấu hiệu nợ xấu tiềm ẩn).
+  func notifyMinimumPaymentStreak(cardName: String, streak: Int) async {
+    guard streak >= 3 else { return }
+    let week = Calendar.current.component(.weekOfYear, from: .now)
+    let id = "cc-minstreak-\(cardName)-\(week)"
+    let content = UNMutableNotificationContent()
+    content.title = "Nhiều kỳ chỉ trả tối thiểu"
+    content.body =
+      "\(cardName) đã \(streak) kỳ liên tiếp chỉ trả tối thiểu — dấu hiệu nợ xấu tiềm ẩn, cân nhắc trả nhiều hơn."
+    content.sound = .default
+    try? await center.add(UNNotificationRequest(identifier: id, content: content, trigger: nil))
+  }
 }

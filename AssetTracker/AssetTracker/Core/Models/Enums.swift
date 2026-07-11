@@ -81,3 +81,60 @@ enum PaymentFrequency: String, Codable, CaseIterable, Sendable {
   case annual
   case oneTime = "one_time"
 }
+
+// note.txt mục 5 — nợ phải trả
+enum LiabilityType: String, Codable, CaseIterable, Sendable {
+  case mortgageLoan = "mortgage_loan"
+  case carLoan = "car_loan"
+  case consumerLoan = "consumer_loan"
+  case unsecuredLoan = "unsecured_loan"
+  case familyLoan = "family_loan"
+  case installmentPlan = "installment_plan"
+  case creditCard = "credit_card"
+  case otherPayable = "other_payable"
+
+  enum Group: String, Sendable { case termLoan, creditCard, otherPayable }
+
+  var group: Group {
+    switch self {
+    case .creditCard: return .creditCard
+    case .otherPayable: return .otherPayable
+    default: return .termLoan
+    }
+  }
+
+  var label: String {
+    switch self {
+    case .mortgageLoan: return "Vay mua nhà"
+    case .carLoan: return "Vay mua xe"
+    case .consumerLoan: return "Vay tiêu dùng"
+    case .unsecuredLoan: return "Vay tín chấp"
+    case .familyLoan: return "Vay người thân"
+    case .installmentPlan: return "Trả góp"
+    case .creditCard: return "Thẻ tín dụng"
+    case .otherPayable: return "Khoản phải trả khác"
+    }
+  }
+}
+
+enum InterestRateType: String, Codable, CaseIterable, Sendable {
+  case fixed, floating
+  var label: String { self == .fixed ? "Cố định" : "Thả nổi" }
+}
+
+enum RepaymentMethod: String, Codable, CaseIterable, Sendable {
+  case equalPrincipal = "equal_principal"
+  case annuity
+  var label: String { self == .equalPrincipal ? "Gốc đều" : "Trả đều (annuity)" }
+}
+
+enum LiabilityPaymentType: String, Codable, CaseIterable, Sendable {
+  case full, minimum, partial
+  var label: String {
+    switch self {
+    case .full: return "Trả toàn bộ"
+    case .minimum: return "Trả tối thiểu"
+    case .partial: return "Trả số khác"
+    }
+  }
+}

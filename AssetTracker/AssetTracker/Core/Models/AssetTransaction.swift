@@ -14,6 +14,8 @@ struct AssetTransaction: Codable, Identifiable, Hashable, Sendable {
   var destinationAccountID: UUID?
   var note: String?
   var attachmentURL: String?
+  var liabilityID: UUID? = nil
+  var paymentType: LiabilityPaymentType? = nil
   var createdAt: Date
   var editedBy: String? = nil
 
@@ -24,6 +26,8 @@ struct AssetTransaction: Codable, Identifiable, Hashable, Sendable {
     case sourceAccountID = "source_account_id"
     case destinationAccountID = "destination_account_id"
     case attachmentURL = "attachment_url"
+    case liabilityID = "liability_id"
+    case paymentType = "payment_type"
     case createdAt = "created_at"
     case editedBy = "edited_by"
   }

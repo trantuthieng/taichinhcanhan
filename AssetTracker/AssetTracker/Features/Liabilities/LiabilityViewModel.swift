@@ -5,6 +5,7 @@ import Observation
   private let repository = LiabilityRepository()
   var liabilities: [Liability] = []
   var errorMessage: String?
+
   func load() async {
     do {
       liabilities = try await repository.fetchAll().sorted {
@@ -12,6 +13,11 @@ import Observation
       }
     } catch { errorMessage = error.localizedDescription }
   }
+
+  func group(_ g: LiabilityType.Group) -> [Liability] {
+    liabilities.filter { $0.liabilityType.group == g }
+  }
+
   func save(_ value: Liability, isNew: Bool) async -> Bool {
     do {
       let saved = try await (isNew ? repository.insert(value) : repository.update(value))
@@ -23,12 +29,10 @@ import Observation
       return false
     }
   }
-  func delete(at offsets: IndexSet) async {
-    for i in offsets {
-      let id = liabilities[i].id
-      try? await repository.delete(id: id)
-      await ReminderScheduler.shared.cancelLiability(id: id)
-    }
+
+  func delete(_ liability: Liability) async {
+    try? await repository.delete(id: liability.id)
+    await ReminderScheduler.shared.cancelLiability(id: liability.id)
     await load()
   }
 }
