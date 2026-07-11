@@ -1,0 +1,2368 @@
+# TÀI LIỆU Ý TƯỞNG SẢN PHẨM  
+## Ứng dụng iOS quản lý tổng tài sản cá nhân
+
+---
+
+## 1. Tổng quan dự án
+
+### 1.1. Tên dự án tạm thời
+
+Một số tên có thể cân nhắc:
+
+- Tài Sản 360
+- Gia Sản
+- Tích Sản
+- NetWorth VN
+- My Wealth VN
+- WealthBook
+- AssetFlow
+- Tài Sản Của Tôi
+
+### 1.2. Mô tả sản phẩm
+
+Ứng dụng iOS giúp người dùng theo dõi toàn bộ tài sản cá nhân tại một nơi, bao gồm:
+
+- Tiền mặt
+- Tài khoản ngân hàng
+- Chứng khoán
+- Vàng
+- Tiền gửi tiết kiệm
+- Ngoại tệ
+- Tài sản khác
+- Các khoản nợ phải trả
+
+Ứng dụng tập trung vào việc giúp người dùng biết:
+
+1. Tổng tài sản hiện tại là bao nhiêu.
+2. Tài sản đang được phân bổ vào những kênh nào.
+3. Tài sản nào đang sinh lời hoặc thua lỗ.
+4. Giá trị tài sản thay đổi như thế nào theo thời gian.
+5. Tài sản ròng sau khi trừ các khoản nợ là bao nhiêu.
+6. Khoản tiết kiệm hoặc khoản đầu tư nào sắp đến hạn.
+7. Tỷ trọng tài sản hiện tại có đang mất cân đối hay không.
+
+### 1.3. Thông điệp sản phẩm
+
+> Một nơi duy nhất để theo dõi toàn bộ tài sản, khoản đầu tư và giá trị tài sản ròng của bạn.
+
+### 1.4. Định vị sản phẩm
+
+Ứng dụng không phải là ứng dụng ghi chép chi tiêu thông thường.
+
+Trọng tâm của sản phẩm là:
+
+- Quản lý tài sản
+- Quản lý đầu tư
+- Theo dõi tài sản ròng
+- Theo dõi hiệu quả tích lũy
+- Theo dõi thu nhập thụ động
+- Quản lý kỳ hạn tài chính
+
+### 1.5. Đối tượng người dùng
+
+Ứng dụng phù hợp với:
+
+- Người đi làm có nhiều tài khoản ngân hàng
+- Người đầu tư chứng khoán
+- Người mua vàng tích lũy
+- Người gửi tiết kiệm tại nhiều ngân hàng
+- Người muốn theo dõi tài sản gia đình
+- Người có tài sản nhưng chưa có công cụ tổng hợp
+- Người muốn theo dõi tài sản ròng theo tháng
+- Người đang xây dựng mục tiêu tự do tài chính
+
+---
+
+# 2. Mục tiêu sản phẩm
+
+## 2.1. Mục tiêu chính
+
+Ứng dụng cần trả lời nhanh các câu hỏi:
+
+- Tôi đang có tổng tài sản bao nhiêu?
+- Tổng tài sản của tôi tăng hay giảm?
+- Tôi đã bỏ ra bao nhiêu vốn?
+- Tôi đang lãi hoặc lỗ bao nhiêu?
+- Tiền đang nằm ở đâu?
+- Tài sản nào chiếm tỷ trọng lớn nhất?
+- Tôi có bao nhiêu tài sản có thể chuyển thành tiền ngay?
+- Tháng tới có khoản tiết kiệm nào đáo hạn?
+- Tôi đã nhận bao nhiêu tiền lãi và cổ tức?
+- Sau khi trừ nợ, tài sản ròng của tôi là bao nhiêu?
+
+## 2.2. Mục tiêu trải nghiệm người dùng
+
+Ứng dụng cần:
+
+- Dễ nhập dữ liệu
+- Dễ xem tổng quan
+- Không yêu cầu người dùng có kiến thức tài chính chuyên sâu
+- Không yêu cầu kết nối tài khoản ngân hàng trong phiên bản đầu
+- Không thực hiện giao dịch tài chính
+- Không đưa ra khuyến nghị đầu tư trực tiếp
+- Tập trung vào bảo mật và quyền riêng tư
+- Có thể hoạt động offline
+- Có thể sao lưu dữ liệu bằng iCloud
+
+---
+
+# 3. Các khái niệm tài chính cốt lõi
+
+## 3.1. Tổng tài sản
+
+Tổng tài sản là tổng giá trị hiện tại của tất cả tài sản mà người dùng đang sở hữu.
+
+```text
+Tổng tài sản
+= Tiền mặt
++ Tiền trong tài khoản (bao gồm tài khoản ngoại tệ, quy đổi theo tỷ giá hiện tại — xem mục 4.1.5)
++ Giá trị chứng khoán
++ Giá trị vàng
++ Tiền gửi tiết kiệm
++ Giá trị tài sản khác
+```
+
+## 3.2. Tổng nợ
+
+Tổng nợ là tổng số tiền mà người dùng có nghĩa vụ phải thanh toán.
+
+Ví dụ:
+
+- Vay mua nhà
+- Vay mua xe
+- Dư nợ thẻ tín dụng
+- Vay tiêu dùng
+- Vay cá nhân
+- Khoản phải trả
+
+## 3.3. Tài sản ròng
+
+```text
+Tài sản ròng = Tổng tài sản - Tổng nợ
+```
+
+Tài sản ròng nên là chỉ số trung tâm của ứng dụng.
+
+## 3.4. Giá vốn
+
+Giá vốn là tổng số tiền thực tế người dùng đã bỏ ra để sở hữu tài sản.
+
+Ví dụ:
+
+```text
+Mua 1.000 cổ phiếu với giá 25.000 đồng/cổ phiếu
+Phí giao dịch: 150.000 đồng
+
+Giá vốn = 25.000.000 + 150.000
+         = 25.150.000 đồng
+```
+
+## 3.5. Giá trị hiện tại
+
+Giá trị hiện tại là giá trị tài sản tại thời điểm được cập nhật gần nhất.
+
+```text
+Giá trị hiện tại = Số lượng × Giá thị trường hiện tại
+```
+
+## 3.6. Lãi hoặc lỗ
+
+```text
+Lãi/lỗ = Giá trị hiện tại - Giá vốn còn lại
+```
+
+## 3.7. Tỷ suất lợi nhuận
+
+```text
+Tỷ suất lợi nhuận
+= Lãi/lỗ ÷ Giá vốn × 100%
+```
+
+## 3.8. Thu nhập thụ động
+
+Thu nhập thụ động có thể bao gồm:
+
+- Lãi tiết kiệm
+- Cổ tức tiền mặt
+- Tiền cho thuê tài sản
+- Lợi tức trái phiếu
+- Lợi nhuận phân phối từ quỹ
+- Thu nhập từ khoản cho vay
+
+---
+
+# 4. Danh mục tài sản
+
+## 4.1. Tiền mặt và tài khoản thanh toán
+
+### 4.1.1. Các loại tài khoản
+
+Người dùng có thể tạo:
+
+- Tiền mặt cá nhân
+- Tiền mặt gia đình
+- Tài khoản ngân hàng
+- Tài khoản lương
+- Tài khoản chi tiêu
+- Ví điện tử
+- Quỹ khẩn cấp
+- Quỹ du lịch
+- Quỹ đầu tư
+- Ngoại tệ tiền mặt
+
+### 4.1.2. Trường dữ liệu
+
+| Trường | Kiểu dữ liệu | Bắt buộc | Ví dụ |
+|---|---|---:|---|
+| Tên tài khoản | Text | Có | Tài khoản Vietcombank |
+| Loại tài khoản | Enum | Có | Ngân hàng |
+| Số dư | Decimal | Có | 50.000.000 |
+| Tiền tệ | Enum | Có | VND |
+| Tỷ giá mua (nếu ngoại tệ) | Decimal | Không | 25.400 |
+| Tỷ giá hiện tại (nếu ngoại tệ) | Decimal | Không | 25.450 |
+| Giá trị quy đổi VND | Decimal | Tự tính | — |
+| Lãi/lỗ tỷ giá | Decimal | Tự tính | — |
+| Tổ chức quản lý | Text | Không | Vietcombank |
+| Số tài khoản rút gọn | Text | Không | ****1234 |
+| Ngày cập nhật | Date | Có | 10/07/2026 |
+| Nhóm mục tiêu | Text | Không | Quỹ khẩn cấp |
+| Ghi chú | Text | Không | Dùng cho chi tiêu gia đình |
+
+### 4.1.3. Chức năng
+
+- Thêm tài khoản
+- Chỉnh sửa số dư
+- Ghi nhận nạp tiền
+- Ghi nhận rút tiền
+- Chuyển tiền giữa các tài khoản
+- Chuyển đổi ngoại tệ
+- Cập nhật tỷ giá quy đổi
+- Lưu lịch sử số dư
+- Phân nhóm theo mục tiêu
+- Đánh dấu tài khoản không tính vào tổng tài sản
+
+### 4.1.4. Tránh cộng trùng
+
+Khi chuyển tiền từ tài khoản ngân hàng sang tiết kiệm:
+
+- Số dư tài khoản ngân hàng phải giảm
+- Khoản tiết kiệm phải tăng
+- Tổng tài sản không thay đổi tại thời điểm chuyển
+
+### 4.1.5. Xử lý tài khoản ngoại tệ
+
+> Cập nhật 11/07/2026: ngoại tệ không phải một nhóm tài sản riêng — bất kỳ tài khoản nào ở mục 4.1 cũng có thể có `Tiền tệ` khác VND (USD, EUR, JPY, AUD, CAD, SGD, CNY, KRW, hoặc ngoại tệ khác), và được xử lý ngay trong module Tiền mặt/tài khoản này thay vì một màn hình riêng.
+
+```text
+Giá trị quy đổi sang VND
+= Số dư ngoại tệ × Tỷ giá mua vào hiện tại
+
+Lãi/lỗ tỷ giá
+= (Tỷ giá hiện tại − Tỷ giá lúc nhận tiền) × Số dư ngoại tệ
+```
+
+Nguồn tỷ giá: nhập thủ công ở giai đoạn đầu (Cấp độ 1, mục 13.1). Có thể bổ sung provider tỷ giá tự động sau này theo đúng cơ chế Edge Function đã dùng cho giá vàng/chứng khoán (mục 29.3), nếu sau này tìm được API tỷ giá phù hợp.
+
+---
+
+## 4.2. Chứng khoán
+
+### 4.2.1. Loại tài sản chứng khoán
+
+- Cổ phiếu
+- Chứng chỉ quỹ
+- ETF
+- Trái phiếu niêm yết
+- Chứng quyền
+- Cổ phiếu nước ngoài
+- Quỹ mở
+- Tài sản chứng khoán khác
+
+### 4.2.2. Trường dữ liệu danh mục
+
+| Trường | Kiểu dữ liệu | Bắt buộc | Ví dụ |
+|---|---|---:|---|
+| Mã chứng khoán | Text | Có | HPG |
+| Tên doanh nghiệp | Text | Không | Tập đoàn Hòa Phát |
+| Sàn giao dịch | Enum | Không | HOSE |
+| Tài khoản chứng khoán | Reference | Có | SSI |
+| Loại tài sản | Enum | Có | Cổ phiếu |
+| Số lượng hiện tại | Decimal | Tự tính | 2.000 |
+| Giá vốn bình quân | Decimal | Tự tính | 25.000 |
+| Giá hiện tại | Decimal | Có | 28.000 |
+| Giá trị hiện tại | Decimal | Tự tính | 56.000.000 |
+| Lãi/lỗ | Decimal | Tự tính | 6.000.000 |
+| Tỷ suất lợi nhuận | Percentage | Tự tính | 12% |
+| Cổ tức đã nhận | Decimal | Tự tính | 1.000.000 |
+| Ngày cập nhật giá | DateTime | Có | 10/07/2026 15:00 |
+
+### 4.2.3. Giao dịch mua
+
+| Trường | Ví dụ |
+|---|---|
+| Ngày mua | 01/07/2026 |
+| Mã chứng khoán | HPG |
+| Số lượng | 1.000 |
+| Giá mua | 25.000 |
+| Phí giao dịch | 150.000 |
+| Thuế | 0 |
+| Tài khoản | SSI |
+| Ghi chú | Mua tích lũy |
+
+### 4.2.4. Giao dịch bán
+
+| Trường | Ví dụ |
+|---|---|
+| Ngày bán | 20/07/2026 |
+| Mã chứng khoán | HPG |
+| Số lượng bán | 500 |
+| Giá bán | 28.000 |
+| Phí giao dịch | 84.000 |
+| Thuế bán | 14.000 |
+| Lợi nhuận thực hiện | Tự tính |
+| Tài khoản nhận tiền | SSI Cash |
+
+### 4.2.5. Tính giá vốn bình quân
+
+Ví dụ:
+
+```text
+Mua lần 1:
+1.000 HPG × 24.000 đồng = 24.000.000 đồng
+
+Mua lần 2:
+500 HPG × 26.000 đồng = 13.000.000 đồng
+
+Tổng số lượng:
+1.500 cổ phiếu
+
+Tổng giá vốn:
+37.000.000 đồng
+
+Giá vốn bình quân:
+37.000.000 ÷ 1.500
+= 24.666,67 đồng/cổ phiếu
+```
+
+### 4.2.6. Các nghiệp vụ nâng cao
+
+Ứng dụng nên dự phòng hỗ trợ:
+
+- Bán một phần
+- Cổ tức tiền mặt
+- Cổ tức cổ phiếu
+- Cổ phiếu thưởng
+- Quyền mua
+- Chia tách cổ phiếu
+- Gộp cổ phiếu
+- Chuyển sàn
+- Chuyển tài khoản lưu ký
+- Thuế bán chứng khoán
+- Phí giao dịch
+- Phí lưu ký
+- Tiền đang chờ về
+- Cổ tức đang chờ về
+
+### 4.2.7. Chỉ số hiển thị
+
+- Tổng giá vốn
+- Giá trị thị trường
+- Lãi/lỗ chưa thực hiện
+- Lãi/lỗ đã thực hiện
+- Cổ tức đã nhận
+- Tổng lợi nhuận
+- Tỷ suất lợi nhuận
+- Tỷ trọng theo mã
+- Tỷ trọng theo ngành
+- Tỷ trọng theo tài khoản
+- Tỷ trọng theo thị trường
+
+---
+
+## 4.3. Vàng
+
+### 4.3.1. Các loại vàng
+
+- Vàng miếng SJC
+- Vàng nhẫn 9999
+- Vàng miếng thương hiệu khác
+- Vàng trang sức
+- Vàng 24K
+- Vàng 18K
+- Vàng 14K
+- Vàng quốc tế
+- Vàng vật chất khác
+
+### 4.3.2. Đơn vị hỗ trợ
+
+- Lượng
+- Cây
+- Chỉ
+- Phân
+- Gram
+- Ounce
+
+### 4.3.3. Trường dữ liệu
+
+| Trường | Kiểu dữ liệu | Bắt buộc | Ví dụ |
+|---|---|---:|---|
+| Tên tài sản | Text | Có | Vàng nhẫn 9999 PNJ |
+| Loại vàng | Enum | Có | Nhẫn 9999 |
+| Thương hiệu | Text | Không | PNJ |
+| Số lượng | Decimal | Có | 5 |
+| Đơn vị | Enum | Có | Chỉ |
+| Giá mua | Decimal | Có | 10.500.000/chỉ |
+| Tổng tiền mua | Decimal | Tự tính | 52.500.000 |
+| Giá mua vào hiện tại | Decimal | Có | 10.800.000/chỉ |
+| Giá bán ra hiện tại | Decimal | Không | 11.000.000/chỉ |
+| Giá trị hiện tại | Decimal | Tự tính | 54.000.000 |
+| Lãi/lỗ | Decimal | Tự tính | 1.500.000 |
+| Ngày mua | Date | Có | 01/06/2026 |
+| Nơi mua | Text | Không | PNJ |
+| Nơi lưu giữ | Text | Không | Két cá nhân |
+| Số hóa đơn | Text | Không | HD001 |
+| Ảnh hóa đơn | Attachment | Không | JPG/PDF |
+
+### 4.3.4. Nguyên tắc định giá
+
+Khi người dùng đang sở hữu vàng, giá trị hiện tại nên được tính theo:
+
+```text
+Giá trị hiện tại
+= Số lượng vàng × Giá doanh nghiệp mua vào
+```
+
+Không nên mặc định dùng giá bán ra.
+
+Lý do:
+
+- Giá bán ra là giá người dùng phải trả khi mua vàng.
+- Giá mua vào là giá người dùng nhận được khi bán vàng.
+
+### 4.3.5. Chức năng
+
+- Thêm giao dịch mua vàng
+- Thêm giao dịch bán vàng
+- Quản lý theo lô mua
+- Quản lý nhiều thương hiệu
+- Chuyển đổi đơn vị vàng
+- Cập nhật giá thủ công
+- Cập nhật giá tự động
+- Lưu lịch sử giá
+- Thiết lập giá mục tiêu
+- Lưu hóa đơn
+- Ghi nhận phí gia công
+- Ghi nhận hao hụt khi bán trang sức
+
+### 4.3.6. Lưu ý với vàng trang sức
+
+Đối với vàng trang sức, cần có thêm:
+
+- Trọng lượng tổng
+- Trọng lượng vàng thực
+- Tuổi vàng
+- Tiền công
+- Giá trị đá quý
+- Tỷ lệ khấu hao
+- Giá thu mua dự kiến
+
+---
+
+## 4.4. Tiền gửi tiết kiệm
+
+### 4.4.1. Loại tiền gửi
+
+- Tiết kiệm có kỳ hạn
+- Tiết kiệm không kỳ hạn
+- Tiết kiệm online
+- Tiết kiệm tại quầy
+- Tiết kiệm tích lũy
+- Tiết kiệm linh hoạt
+- Chứng chỉ tiền gửi
+
+### 4.4.2. Trường dữ liệu
+
+| Trường | Kiểu dữ liệu | Bắt buộc | Ví dụ |
+|---|---|---:|---|
+| Tên khoản tiết kiệm | Text | Có | Tiết kiệm 12 tháng |
+| Ngân hàng | Text | Có | Vietcombank |
+| Số tiền gốc | Decimal | Có | 500.000.000 |
+| Tiền tệ | Enum | Có | VND |
+| Lãi suất năm | Percentage | Có | 5,2% |
+| Ngày gửi | Date | Có | 01/07/2026 |
+| Ngày đáo hạn | Date | Tự tính | 01/07/2027 |
+| Kỳ hạn | Enum | Có | 12 tháng |
+| Hình thức nhận lãi | Enum | Có | Cuối kỳ |
+| Tái tục | Enum | Không | Gốc và lãi |
+| Tài khoản nhận lãi | Reference | Không | Vietcombank |
+| Lãi dự kiến | Decimal | Tự tính | 26.000.000 |
+| Giá trị đáo hạn | Decimal | Tự tính | 526.000.000 |
+| Lãi suất trước hạn | Percentage | Không | 0,2% |
+| Số hợp đồng | Text | Không | STK001 |
+| Tệp đính kèm | Attachment | Không | PDF |
+
+### 4.4.3. Công thức tính lãi cuối kỳ
+
+```text
+Lãi dự kiến
+= Tiền gốc × Lãi suất năm × Số ngày gửi ÷ 365
+```
+
+### 4.4.4. Công thức nhận lãi hàng tháng
+
+```text
+Lãi mỗi tháng
+= Tiền gốc × Lãi suất năm ÷ 12
+```
+
+### 4.4.5. Tất toán trước hạn
+
+Ứng dụng có thể ước tính:
+
+```text
+Lãi trước hạn
+= Tiền gốc × Lãi suất không kỳ hạn × Số ngày gửi thực tế ÷ 365
+```
+
+### 4.4.6. Chức năng
+
+- Thêm sổ tiết kiệm
+- Tự tính ngày đáo hạn
+- Nhắc trước đáo hạn
+- Nhắc ngày nhận lãi
+- Ghi nhận tái tục
+- Ghi nhận tất toán
+- Tính lãi dự kiến
+- Tính lãi thực nhận
+- Tính lãi khi rút trước hạn
+- Quản lý nhiều ngân hàng
+- Đính kèm ảnh hoặc PDF
+- Phân biệt tiền gốc và lãi
+- Hiển thị lịch đáo hạn theo tháng
+
+---
+
+## 4.5. Ngoại tệ (đã gộp vào mục 4.1)
+
+> Cập nhật 11/07/2026: ngoại tệ không còn là một nhóm tài sản riêng — đã gộp thẳng vào tài khoản Tiền mặt/thanh toán ở mục 4.1 (xem 4.1.5), vì về bản chất một khoản ngoại tệ vẫn là tiền nằm trong một tài khoản/ví, chỉ khác đơn vị tiền tệ. Toàn bộ trường dữ liệu và công thức trước đây ở mục này nay nằm ở mục 4.1.2 và 4.1.5.
+
+---
+
+## 4.6. Tài sản khác
+
+Ứng dụng nên dự phòng các nhóm:
+
+- Bất động sản
+- Ô tô
+- Xe máy
+- Trái phiếu
+- Chứng chỉ quỹ
+- Tiền điện tử
+- Bảo hiểm có giá trị hoàn lại
+- Khoản cho vay
+- Vốn góp doanh nghiệp
+- Đồ sưu tầm
+- Tài sản số
+- Tài sản cho thuê
+
+### 4.6.1. Trường chung
+
+- Tên tài sản
+- Loại tài sản
+- Ngày mua
+- Giá mua
+- Giá trị hiện tại
+- Nguồn định giá
+- Thu nhập tạo ra
+- Chi phí liên quan
+- Nơi lưu giữ
+- Tài liệu đính kèm
+- Ghi chú
+
+---
+
+# 5. Quản lý nợ phải trả
+
+> Cập nhật 11/07/2026: mở rộng đáng kể so với bản đầu — tách rõ 3 cơ chế trả nợ khác nhau (vay có kỳ hạn / thẻ tín dụng / khoản phải trả khác), vì gộp chung như bản cũ sẽ thiếu trường dữ liệu quan trọng (kỳ sao kê thẻ tín dụng, phương thức tính lãi vay...).
+
+## 5.1. Ba cơ chế trả nợ khác nhau
+
+| Nhóm | Loại nợ | Đặc điểm |
+|---|---|---|
+| A. Vay có kỳ hạn | Vay mua nhà, vay mua xe, vay tiêu dùng, vay tín chấp, vay người thân, khoản trả góp có kỳ hạn | Dư nợ giảm dần theo lịch trả cố định, biết trước ngày kết thúc |
+| B. Thẻ tín dụng | Dư nợ thẻ tín dụng | Hạn mức tái sử dụng (revolving), dư nợ biến động theo chi tiêu, có kỳ sao kê và ngày đến hạn riêng |
+| C. Khoản phải trả khác | Nợ người thân không lãi, hóa đơn chưa thanh toán, tiền đặt cọc phải hoàn trả | Không có lịch trả cố định |
+
+## 5.2. Nhóm A — Vay có kỳ hạn
+
+### 5.2.1. Trường dữ liệu
+
+| Trường | Kiểu dữ liệu | Bắt buộc | Ví dụ |
+|---|---|---:|---|
+| Tên khoản vay | Text | Có | Vay mua căn hộ |
+| Chủ nợ | Text | Không | Agribank |
+| Số tiền vay ban đầu | Decimal | Có | 1.500.000.000 |
+| Dư nợ hiện tại | Decimal | Tự tính | 1.420.000.000 |
+| Lãi suất năm | Percentage | Có | 6,5% |
+| Loại lãi suất | Enum (Cố định/Thả nổi) | Có | Thả nổi |
+| Ngày hết ưu đãi lãi suất cố định | Date | Không | 01/07/2027 |
+| Phương thức trả | Enum (Gốc đều/Trả đều) | Có | Trả đều (annuity) |
+| Ngày vay | Date | Có | 01/01/2026 |
+| Kỳ hạn (tháng) | Int | Có | 300 |
+| Ngày đáo hạn | Date | Tự tính | 01/01/2051 |
+| Kỳ thanh toán | Enum | Có | Hàng tháng |
+| Ngày thanh toán tiếp theo | Date | Tự tính | 01/08/2026 |
+| Phí trả nợ trước hạn | Percentage | Không | 2% (năm 1-2), giảm dần |
+| Kỳ ân hạn gốc | Int (tháng) | Không | 6 |
+| Tài sản bảo đảm | Text | Không | Căn hộ |
+| Ghi chú | Text | Không | Lãi suất cố định 18 tháng đầu |
+
+### 5.2.2. Công thức
+
+Phương thức "Gốc đều" (gốc trả mỗi kỳ bằng nhau, lãi giảm dần theo dư nợ còn lại):
+
+```text
+Gốc mỗi kỳ = Số tiền vay ban đầu ÷ Số kỳ
+Lãi mỗi kỳ = Dư nợ còn lại × Lãi suất kỳ
+Tổng trả mỗi kỳ = Gốc mỗi kỳ + Lãi mỗi kỳ
+```
+
+Phương thức "Trả đều" (annuity — mỗi kỳ trả số tiền cố định, giống phần lớn vay mua nhà ngân hàng VN):
+
+```text
+r = Lãi suất năm ÷ Số kỳ mỗi năm
+n = Số kỳ còn lại
+PMT = Dư nợ hiện tại × r ÷ (1 − (1 + r)^(−n))
+```
+
+Khi lãi suất thả nổi thay đổi (hết ưu đãi cố định), người dùng cập nhật lãi suất mới → app tính lại PMT/lịch trả từ kỳ tiếp theo, không tính lại các kỳ đã qua.
+
+```text
+Phí trả nợ trước hạn = Số tiền trả trước × % phí phạt theo hợp đồng
+```
+
+### 5.2.3. Lịch trả nợ (Amortization schedule)
+
+App tự sinh bảng lịch trả dự kiến: kỳ số, ngày đến hạn, gốc phải trả, lãi phải trả, tổng phải trả, dư nợ còn lại sau kỳ. Khi người dùng ghi nhận thanh toán (giao dịch loại `repayment`), **dư nợ hiện tại luôn được tính lại từ lịch sử thanh toán thực tế** (đúng nguyên tắc append-only ở mục 26.4) — không lưu trực tiếp field dư nợ rồi tự sửa tay.
+
+### 5.2.4. Chức năng
+
+- Thêm khoản vay, chọn phương thức trả, app tự sinh lịch trả dự kiến.
+- Ghi nhận thanh toán từng kỳ, đối chiếu với lịch dự kiến (đã trả / trễ hạn / chưa trả).
+- Cập nhật lãi suất khi hết ưu đãi (lãi suất thả nổi).
+- Trả nợ trước hạn một phần hoặc toàn bộ — tính lại lịch trả hoặc đóng khoản vay, tính phí phạt nếu có.
+- Nhắc trước ngày đến hạn từng kỳ.
+
+## 5.3. Nhóm B — Thẻ tín dụng
+
+### 5.3.1. Vì sao khác vay thường
+
+Thẻ tín dụng không có "ngày vay" cố định — là hạn mức tái sử dụng, dư nợ biến động hàng ngày theo chi tiêu quẹt thẻ. Có "kỳ sao kê" (ví dụ chốt ngày 15 hàng tháng) và "ngày đến hạn thanh toán" (thường 15-25 ngày sau ngày sao kê — đây là kỳ miễn lãi nếu trả đủ 100% dư nợ sao kê).
+
+**Điểm quan trọng nhất cần app cảnh báo rõ:** nếu chỉ trả "thanh toán tối thiểu" (thường 5% dư nợ), toàn bộ dư nợ — kể cả phần đã trả trong kỳ — sẽ bị tính lãi hồi tố kể từ ngày phát sinh giao dịch, không chỉ tính lãi trên phần chưa trả. Đây là hiểu lầm phổ biến nhất của người dùng thẻ tín dụng tại VN.
+
+**Quyết định phạm vi:** app **không** ghi từng giao dịch quẹt thẻ chi tiết — đúng định vị sản phẩm ở mục 1.4 ("không phải app ghi chép chi tiêu"). App chỉ cần: (a) cập nhật dư nợ theo mỗi kỳ sao kê (nhập tay theo sao kê ngân hàng gửi), (b) ghi nhận thanh toán. Vì vậy, khác với Nhóm A, **dư nợ thẻ tín dụng là field cập nhật trực tiếp mỗi kỳ sao kê**, không suy ra hoàn toàn từ lịch sử giao dịch trong app — đây là ngoại lệ có chủ đích so với nguyên tắc mục 26.4, vì app không có dữ liệu từng giao dịch quẹt thẻ để tính lại.
+
+### 5.3.2. Trường dữ liệu
+
+| Trường | Kiểu dữ liệu | Bắt buộc | Ví dụ |
+|---|---|---:|---|
+| Tên thẻ | Text | Có | Techcombank Visa Signature |
+| Ngân hàng phát hành | Text | Có | Techcombank |
+| Hạn mức tín dụng | Decimal | Có | 100.000.000 |
+| Dư nợ hiện tại | Decimal | Có (cập nhật mỗi kỳ) | 15.000.000 |
+| Ngày sao kê hàng tháng | Int (1-31) | Có | 15 |
+| Ngày đến hạn thanh toán | Int (1-31) | Có | 5 (tháng sau) |
+| Số ngày miễn lãi | Int | Không | 45 |
+| Lãi suất năm | Percentage | Có | 28% |
+| Tỷ lệ thanh toán tối thiểu | Percentage | Có | 5% |
+| Số tiền thanh toán tối thiểu cố định | Decimal | Không | 100.000 |
+| Phí thường niên | Decimal | Không | 500.000 |
+| Phí trả chậm | Decimal | Không | 200.000 |
+| Dư nợ kỳ sao kê gần nhất | Decimal | Tự cập nhật | 15.000.000 |
+| Ngày sao kê gần nhất | Date | Tự cập nhật | 15/06/2026 |
+
+### 5.3.3. Công thức
+
+```text
+Số dư khả dụng = Hạn mức tín dụng − Dư nợ hiện tại
+
+Thanh toán tối thiểu
+= MAX(Dư nợ hiện tại × Tỷ lệ thanh toán tối thiểu, Số tiền tối thiểu cố định)
+
+Tỷ lệ sử dụng hạn mức = Dư nợ hiện tại ÷ Hạn mức tín dụng
+
+Lãi ước tính nếu chỉ trả tối thiểu (gần đúng)
+= Dư nợ hiện tại × Lãi suất năm ÷ 365 × Số ngày trong kỳ
+```
+
+Lãi ước tính chỉ mang tính tham khảo — cách tính thực tế mỗi ngân hàng có khác biệt (một số tính hồi tố từ ngày giao dịch, không chỉ từ ngày sao kê).
+
+### 5.3.4. Chức năng
+
+- Thêm/cập nhật thẻ tín dụng theo mỗi kỳ sao kê mới.
+- Ghi nhận thanh toán: chọn "trả toàn bộ dư nợ sao kê" / "trả tối thiểu" / "trả số tiền khác" — nếu chọn trả tối thiểu hoặc trả một phần dưới 100%, **hiện cảnh báo rõ ràng ngay trên UI** về việc toàn bộ dư nợ sẽ bị tính lãi hồi tố.
+- Nhắc trước ngày đến hạn thanh toán (X ngày trước, cấu hình được).
+- Cảnh báo khi tỷ lệ sử dụng hạn mức vượt ngưỡng đặt trước.
+- Cảnh báo khi phát hiện nhiều kỳ liên tiếp chỉ trả tối thiểu (dấu hiệu nợ xấu tiềm ẩn).
+
+## 5.4. Nhóm C — Khoản phải trả khác
+
+Không có lịch trả cố định: nợ người thân không lãi/không kỳ hạn rõ ràng, hóa đơn chưa thanh toán, tiền đặt cọc phải hoàn trả.
+
+Trường dữ liệu tối giản: tên, chủ nợ, số tiền, ngày phát sinh, hạn trả dự kiến (không bắt buộc), ghi chú.
+
+## 5.5. Chỉ số tổng hợp
+
+- Tổng nợ = Nhóm A + Nhóm B + Nhóm C.
+- Nợ ngắn hạn (đáo hạn ≤ 12 tháng) / Nợ dài hạn (>12 tháng).
+- Khoản phải trả tháng này = tổng các kỳ trả Nhóm A đến hạn trong 30 ngày + thanh toán tối thiểu/toàn bộ dự kiến của Nhóm B.
+- Tỷ lệ nợ trên tài sản, tỷ lệ nợ trên tài sản ròng.
+- Dư nợ còn lại theo từng khoản.
+- Tổng tiền lãi đã trả (tách phần gốc/lãi từ lịch sử thanh toán).
+- Tỷ lệ sử dụng hạn mức tín dụng trung bình (riêng Nhóm B).
+
+---
+
+# 6. Dashboard tổng quan
+
+## 6.1. Thông tin chính
+
+Màn hình chính hiển thị:
+
+```text
+TỔNG TÀI SẢN
+
+2.850.000.000 đồng
+
+Tăng 32.500.000 đồng trong tháng
++1,15%
+```
+
+Bên dưới:
+
+```text
+Tổng tài sản:       2.850.000.000
+Tổng nợ:            1.200.000.000
+Tài sản ròng:       1.650.000.000
+```
+
+## 6.2. Các thẻ chỉ số
+
+- Tổng tài sản
+- Tài sản ròng
+- Tổng nợ
+- Lãi/lỗ đầu tư
+- Thu nhập thụ động tháng này
+- Tài sản thanh khoản
+- Khoản sắp đáo hạn
+- Biến động trong tháng
+
+## 6.3. Biểu đồ
+
+### Biểu đồ phân bổ tài sản
+
+| Nhóm | Giá trị | Tỷ trọng |
+|---|---:|---:|
+| Tiền mặt | 350 triệu | 12,3% |
+| Chứng khoán | 700 triệu | 24,6% |
+| Vàng | 300 triệu | 10,5% |
+| Tiết kiệm | 1,5 tỷ | 52,6% |
+
+### Biểu đồ tăng trưởng tài sản
+
+Hiển thị theo:
+
+- 7 ngày
+- 1 tháng
+- 3 tháng
+- 6 tháng
+- 1 năm
+- Toàn bộ thời gian
+
+### Biểu đồ lãi/lỗ
+
+- Lãi/lỗ theo tài sản
+- Lãi/lỗ theo nhóm
+- Lãi/lỗ theo tháng
+- Lợi nhuận đã thực hiện
+- Lợi nhuận chưa thực hiện
+
+## 6.4. Cảnh báo nhanh
+
+Ví dụ:
+
+- Sổ tiết kiệm 500 triệu đồng sẽ đáo hạn sau 7 ngày.
+- HPG đang giảm 12% so với giá vốn.
+- Vàng hiện chiếm hơn 35% tổng tài sản.
+- Tài khoản tiền mặt thấp hơn mức quỹ khẩn cấp đặt trước.
+- Đã 60 ngày chưa cập nhật giá bất động sản.
+
+---
+
+# 7. Cấu trúc điều hướng iOS
+
+## 7.1. Tab Tổng quan
+
+Nội dung:
+
+- Tổng tài sản
+- Tài sản ròng
+- Tổng nợ
+- Biểu đồ phân bổ
+- Biểu đồ tăng trưởng
+- Tài sản biến động mạnh
+- Khoản sắp đáo hạn
+- Cảnh báo
+
+## 7.2. Tab Tài sản
+
+Danh sách:
+
+- Tiền mặt (bao gồm tài khoản ngoại tệ, mục 4.1.5)
+- Chứng khoán
+- Vàng
+- Tiết kiệm
+- Tài sản khác
+
+Mỗi nhóm hiển thị:
+
+- Tổng giá trị
+- Giá vốn
+- Lãi/lỗ
+- Tỷ trọng
+- Số lượng khoản mục
+
+## 7.3. Tab Giao dịch
+
+Các loại giao dịch:
+
+- Nạp tiền
+- Rút tiền
+- Chuyển tiền
+- Mua tài sản
+- Bán tài sản
+- Gửi tiết kiệm
+- Tất toán tiết kiệm
+- Nhận lãi
+- Nhận cổ tức
+- Thanh toán khoản vay
+- Điều chỉnh số dư
+
+## 7.4. Tab Báo cáo
+
+- Báo cáo tổng tài sản
+- Báo cáo tài sản ròng
+- Báo cáo phân bổ
+- Báo cáo lãi/lỗ
+- Báo cáo thu nhập thụ động
+- Báo cáo dòng tiền
+- Báo cáo kỳ hạn
+- Báo cáo nợ
+- Báo cáo theo tài khoản
+- Báo cáo theo loại tiền tệ
+
+## 7.5. Tab Cài đặt
+
+- Tiền tệ mặc định
+- Ngôn ngữ
+- Face ID
+- Mã PIN
+- Chế độ ẩn số dư
+- Sao lưu iCloud
+- Xuất dữ liệu
+- Nhập dữ liệu
+- Nguồn giá thị trường
+- Cài đặt thông báo
+- Chủ đề sáng hoặc tối
+- Quản lý tài khoản gia đình
+
+---
+
+# 8. Luồng nghiệp vụ
+
+## 8.1. Thêm tiền mặt
+
+```text
+Nhấn nút “Thêm tài sản”
+→ Chọn “Tiền mặt”
+→ Nhập tên tài khoản
+→ Nhập số dư
+→ Chọn loại tiền tệ
+→ Chọn nơi lưu giữ
+→ Lưu
+```
+
+## 8.2. Thêm cổ phiếu
+
+```text
+Nhấn nút “Thêm tài sản”
+→ Chọn “Chứng khoán”
+→ Chọn hoặc nhập mã cổ phiếu
+→ Chọn tài khoản chứng khoán
+→ Nhập ngày mua
+→ Nhập số lượng
+→ Nhập giá mua
+→ Nhập phí giao dịch
+→ Lưu
+```
+
+## 8.3. Bán cổ phiếu
+
+```text
+Mở tài sản HPG
+→ Nhấn “Bán”
+→ Nhập số lượng
+→ Nhập giá bán
+→ Nhập phí và thuế
+→ Chọn tài khoản nhận tiền
+→ Xác nhận
+→ App cập nhật số lượng còn lại
+→ App tính lợi nhuận thực hiện
+```
+
+## 8.4. Thêm vàng
+
+```text
+Nhấn nút “Thêm tài sản”
+→ Chọn “Vàng”
+→ Chọn loại vàng
+→ Chọn thương hiệu
+→ Nhập số lượng
+→ Chọn đơn vị
+→ Nhập giá mua
+→ Nhập ngày mua
+→ Nhập nơi lưu giữ
+→ Đính kèm hóa đơn
+→ Lưu
+```
+
+## 8.5. Thêm sổ tiết kiệm
+
+```text
+Nhấn nút “Thêm tài sản”
+→ Chọn “Tiết kiệm”
+→ Chọn ngân hàng
+→ Nhập số tiền
+→ Chọn kỳ hạn
+→ Nhập lãi suất
+→ Chọn ngày gửi
+→ Chọn hình thức nhận lãi
+→ Chọn hình thức tái tục
+→ App tự tính ngày đáo hạn
+→ Lưu
+```
+
+## 8.6. Tất toán tiết kiệm
+
+```text
+Mở sổ tiết kiệm
+→ Nhấn “Tất toán”
+→ Chọn đúng hạn hoặc trước hạn
+→ Nhập số tiền thực nhận
+→ Chọn tài khoản nhận tiền
+→ Xác nhận
+→ App đóng sổ
+→ App ghi nhận tiền gốc và lãi
+```
+
+## 8.7. Chuyển tiền giữa tài khoản
+
+```text
+Chọn “Chuyển tiền”
+→ Chọn tài khoản nguồn
+→ Chọn tài khoản đích
+→ Nhập số tiền
+→ Chọn ngày
+→ Xác nhận
+```
+
+Nguyên tắc:
+
+- Không làm thay đổi tổng tài sản
+- Chỉ thay đổi phân bổ tài sản
+
+---
+
+# 9. Hệ thống giao dịch
+
+## 9.1. Loại giao dịch
+
+```swift
+enum TransactionType {
+    case deposit
+    case withdrawal
+    case transfer
+    case buy
+    case sell
+    case interest
+    case dividend
+    case maturity
+    case repayment
+    case fee
+    case tax
+    case adjustment
+}
+```
+
+## 9.2. Trường dữ liệu giao dịch
+
+| Trường | Mô tả |
+|---|---|
+| ID | Mã giao dịch |
+| Loại giao dịch | Mua, bán, nhận lãi... |
+| Ngày giao dịch | Ngày phát sinh |
+| Tài sản liên quan | Cổ phiếu, vàng, tiết kiệm... |
+| Khoản nợ liên quan | Vay mua nhà, thẻ tín dụng... (dùng khi loại giao dịch là `repayment`, mục 5) |
+| Loại thanh toán (nếu là trả nợ thẻ tín dụng) | Toàn bộ / Tối thiểu / Một phần khác (mục 5.3.4) |
+| Tài khoản nguồn | Tài khoản bị trừ |
+| Tài khoản đích | Tài khoản được cộng |
+| Số lượng | Số đơn vị tài sản |
+| Đơn giá | Giá mỗi đơn vị |
+| Tổng tiền | Giá trị giao dịch |
+| Phí | Phí liên quan |
+| Thuế | Thuế liên quan |
+| Ghi chú | Nội dung bổ sung |
+| Tệp đính kèm | Hóa đơn, hợp đồng |
+
+---
+
+# 10. Báo cáo
+
+## 10.1. Báo cáo tổng tài sản
+
+Hiển thị:
+
+- Tổng tài sản đầu kỳ
+- Tổng tài sản cuối kỳ
+- Mức tăng hoặc giảm
+- Tỷ lệ tăng hoặc giảm
+- Phần tăng từ nạp thêm
+- Phần tăng từ lợi nhuận
+- Phần giảm do rút tài sản
+- Phần giảm do thua lỗ
+
+## 10.2. Báo cáo lãi/lỗ
+
+- Lãi/lỗ chưa thực hiện
+- Lãi/lỗ đã thực hiện
+- Cổ tức
+- Tiền lãi
+- Phí
+- Thuế
+- Tổng lợi nhuận sau phí và thuế
+
+## 10.3. Báo cáo phân bổ
+
+Theo:
+
+- Loại tài sản
+- Tài khoản
+- Ngân hàng
+- Công ty chứng khoán
+- Tiền tệ
+- Mức độ thanh khoản
+- Mục tiêu tài chính
+
+## 10.4. Báo cáo kỳ hạn
+
+- Khoản đáo hạn trong 7 ngày
+- Khoản đáo hạn trong 30 ngày
+- Khoản đáo hạn trong 90 ngày
+- Tổng tiền dự kiến nhận
+- Tổng lãi dự kiến
+
+## 10.5. Báo cáo thu nhập thụ động
+
+- Lãi tiết kiệm
+- Cổ tức
+- Tiền thuê
+- Lợi tức trái phiếu
+- Thu nhập từ khoản cho vay
+- Tổng thu nhập thụ động theo tháng
+
+---
+
+# 11. Hệ thống nhắc nhở
+
+## 11.1. Nhắc đáo hạn
+
+- Trước 30 ngày
+- Trước 14 ngày
+- Trước 7 ngày
+- Trước 1 ngày
+- Đúng ngày đáo hạn
+
+## 11.2. Nhắc cập nhật giá
+
+- Chứng khoán chưa cập nhật trong 7 ngày
+- Vàng chưa cập nhật trong 3 ngày
+- Bất động sản chưa cập nhật trong 90 ngày
+- Ngoại tệ chưa cập nhật trong 7 ngày
+
+## 11.3. Cảnh báo tỷ trọng
+
+Ví dụ:
+
+- Chứng khoán vượt 50% tổng tài sản
+- Vàng vượt 30% tổng tài sản
+- Tiền mặt dưới 5% tổng tài sản
+- Một mã cổ phiếu vượt 20% danh mục
+
+## 11.4. Cảnh báo lãi/lỗ
+
+- Tài sản giảm 5%
+- Tài sản giảm 10%
+- Tài sản đạt mức lợi nhuận mục tiêu
+- Giá vàng đạt giá mục tiêu
+- Cổ phiếu vượt giá mục tiêu
+
+## 11.5. Nhắc thanh toán nợ
+
+- Khoản vay sắp đến hạn
+- Thẻ tín dụng sắp đến ngày thanh toán
+- Khoản trả góp đến kỳ
+- Dư nợ vượt ngưỡng đặt trước
+- Nhiều kỳ liên tiếp chỉ trả tối thiểu thẻ tín dụng (mục 5.3.4)
+
+---
+
+# 12. Bảo mật và quyền riêng tư
+
+## 12.1. Nguyên tắc
+
+- Không yêu cầu mật khẩu ngân hàng
+- Không lưu thông tin đăng nhập ngân hàng
+- Không thực hiện giao dịch
+- Không chia sẻ dữ liệu cho bên thứ ba
+- Cho phép người dùng sử dụng hoàn toàn offline
+- Mã hóa dữ liệu cục bộ
+- Chỉ đồng bộ khi người dùng cho phép
+
+## 12.2. Tính năng bảo mật
+
+- Face ID
+- Touch ID
+- Mã PIN
+- Tự động khóa
+- Ẩn số dư
+- Chế độ riêng tư khi đa nhiệm
+- Che nội dung trong App Switcher
+- Cảnh báo khi chụp màn hình
+- Mã hóa dữ liệu
+- Sao lưu iCloud có kiểm soát
+- Xuất dữ liệu có mật khẩu
+
+## 12.3. Chế độ ẩn số dư
+
+Khi bật:
+
+```text
+Tổng tài sản: •••••••••
+Tài sản ròng: •••••••••
+Lãi/lỗ:       •••••••••
+```
+
+---
+
+# 13. Cập nhật giá thị trường
+
+## 13.1. Cấp độ 1: Nhập thủ công
+
+Phù hợp với MVP.
+
+Người dùng tự nhập:
+
+- Giá cổ phiếu
+- Giá vàng
+- Tỷ giá
+- Giá bất động sản
+- Giá tài sản khác
+
+Ưu điểm:
+
+- Dễ phát triển
+- Ít phụ thuộc
+- Không có chi phí API
+- Dễ kiểm soát dữ liệu
+
+## 13.2. Cấp độ 2: Giá tự động
+
+Có thể hỗ trợ:
+
+- Giá chứng khoán Việt Nam
+- Giá chứng khoán quốc tế
+- Giá vàng theo thương hiệu
+- Tỷ giá ngân hàng
+- Giá tiền điện tử
+
+Mỗi giá phải hiển thị:
+
+- Nguồn dữ liệu
+- Thời gian cập nhật
+- Giá mua vào
+- Giá bán ra
+- Trạng thái dữ liệu
+
+## 13.3. Cấp độ 3: Đồng bộ tài khoản
+
+Có thể phát triển sau:
+
+- Đồng bộ tài khoản chứng khoán
+- Đồng bộ số dư ngân hàng
+- Đồng bộ sổ tiết kiệm
+- Đồng bộ danh mục đầu tư
+
+Đây là chức năng phức tạp vì liên quan đến:
+
+- API
+- Bảo mật
+- Pháp lý
+- Sự đồng ý của người dùng
+- Chuẩn dữ liệu
+- Chi phí vận hành
+
+---
+
+# 14. Mô hình dữ liệu
+
+## 14.1. AssetAccount
+
+```swift
+struct AssetAccount {
+    let id: UUID
+    var name: String
+    var institution: String?
+    var accountType: AccountType
+    var currency: CurrencyCode
+    var balance: Decimal
+    var exchangeRateAtOpening: Decimal?
+    var currentExchangeRate: Decimal?
+    var isIncludedInNetWorth: Bool
+    var createdAt: Date
+    var updatedAt: Date
+}
+```
+
+## 14.2. Asset
+
+```swift
+struct Asset {
+    let id: UUID
+    var name: String
+    var category: AssetCategory
+    var accountID: UUID?
+    var quantity: Decimal
+    var unit: AssetUnit
+    var averageCost: Decimal
+    var currentPrice: Decimal
+    var currency: CurrencyCode
+    var acquisitionDate: Date?
+    var valuationDate: Date
+    var note: String?
+    var createdAt: Date
+    var updatedAt: Date
+}
+```
+
+## 14.3. AssetTransaction
+
+```swift
+struct AssetTransaction {
+    let id: UUID
+    var assetID: UUID?
+    var type: TransactionType
+    var date: Date
+    var quantity: Decimal?
+    var unitPrice: Decimal?
+    var amount: Decimal
+    var fee: Decimal
+    var tax: Decimal
+    var sourceAccountID: UUID?
+    var destinationAccountID: UUID?
+    var note: String?
+}
+```
+
+## 14.4. SavingsDeposit
+
+```swift
+struct SavingsDeposit {
+    let id: UUID
+    var name: String
+    var bankName: String
+    var principal: Decimal
+    var currency: CurrencyCode
+    var annualInterestRate: Decimal
+    var startDate: Date
+    var maturityDate: Date
+    var termInMonths: Int
+    var interestPaymentType: InterestPaymentType
+    var autoRenewalType: AutoRenewalType
+    var earlyWithdrawalRate: Decimal?
+    var status: DepositStatus
+}
+```
+
+## 14.5. Liability
+
+> Cập nhật 11/07/2026: mở rộng theo mục 5 — tách 3 cơ chế trả nợ (vay có kỳ hạn / thẻ tín dụng / khoản phải trả khác) trong cùng 1 struct bằng `liabilityType`, tương tự cách `Asset` (mục 14.2) dùng field tùy chọn riêng cho từng nhóm.
+
+```swift
+enum LiabilityType: String, Codable {
+    case mortgageLoan = "mortgage_loan"
+    case carLoan = "car_loan"
+    case consumerLoan = "consumer_loan"
+    case unsecuredLoan = "unsecured_loan"
+    case familyLoan = "family_loan"
+    case installmentPlan = "installment_plan"
+    case creditCard = "credit_card"
+    case otherPayable = "other_payable"
+}
+
+enum InterestRateType: String, Codable {
+    case fixed, floating
+}
+
+enum RepaymentMethod: String, Codable {
+    case equalPrincipal = "equal_principal"
+    case annuity
+}
+
+struct Liability {
+    let id: UUID
+    var name: String
+    var lender: String?
+    var liabilityType: LiabilityType
+    var originalPrincipal: Decimal
+    var currentBalance: Decimal
+    var currency: CurrencyCode
+    var startDate: Date
+    var maturityDate: Date?
+    var collateral: String?
+    var note: String?
+
+    // Nhóm A — vay có kỳ hạn (mục 5.2)
+    var annualInterestRate: Decimal?
+    var interestRateType: InterestRateType?
+    var fixedRateEndDate: Date?
+    var repaymentMethod: RepaymentMethod?
+    var termInMonths: Int?
+    var paymentFrequency: PaymentFrequency?
+    var nextPaymentDate: Date?
+    var earlyRepaymentFeeRate: Decimal?
+    var gracePeriodMonths: Int?
+
+    // Nhóm B — thẻ tín dụng (mục 5.3). currentBalance ở đây được cập nhật trực tiếp
+    // mỗi kỳ sao kê, không suy ra từ transaction log — ngoại lệ có chủ đích, xem mục 5.3.1.
+    var creditLimit: Decimal?
+    var statementDay: Int?
+    var paymentDueDay: Int?
+    var interestFreeDays: Int?
+    var minPaymentRate: Decimal?
+    var minPaymentFixedAmount: Decimal?
+    var annualFee: Decimal?
+    var lateFee: Decimal?
+    var lastStatementBalance: Decimal?
+    var lastStatementDate: Date?
+
+    var createdAt: Date
+    var updatedAt: Date
+}
+```
+
+## 14.6. ValuationSnapshot
+
+```swift
+struct ValuationSnapshot {
+    let id: UUID
+    var date: Date
+    var totalAssets: Decimal
+    var totalLiabilities: Decimal
+    var netWorth: Decimal
+    var cashValue: Decimal
+    var stockValue: Decimal
+    var goldValue: Decimal
+    var savingsValue: Decimal
+}
+```
+
+---
+
+# 15. Kiến trúc kỹ thuật đề xuất
+
+## 15.1. Nền tảng
+
+- iOS
+- Swift
+- SwiftUI
+- SwiftData
+- CloudKit
+- iCloud
+- Local Notifications
+- Face ID qua LocalAuthentication
+
+## 15.2. Kiến trúc ứng dụng
+
+Có thể sử dụng:
+
+- MVVM
+- Clean Architecture
+- Repository Pattern
+- Dependency Injection
+
+Cấu trúc:
+
+```text
+App
+├── Core
+│   ├── Models
+│   ├── Services
+│   ├── Utilities
+│   └── Security
+├── Features
+│   ├── Dashboard
+│   ├── Assets
+│   ├── Transactions
+│   ├── Reports
+│   ├── Notifications
+│   └── Settings
+├── Data
+│   ├── LocalDatabase
+│   ├── CloudSync
+│   └── MarketData
+└── UI
+    ├── Components
+    ├── Charts
+    └── Themes
+```
+
+## 15.3. Lưu trữ
+
+Phiên bản đầu:
+
+- SwiftData
+- Dữ liệu cục bộ
+- Đồng bộ iCloud tùy chọn
+
+## 15.4. Biểu đồ
+
+Có thể sử dụng:
+
+- Swift Charts
+- Line Chart
+- Donut Chart
+- Bar Chart
+- Area Chart
+
+---
+
+# 16. Phạm vi MVP
+
+## 16.1. MVP phiên bản 1.0
+
+Bao gồm:
+
+- Thêm tài sản
+- Sửa tài sản
+- Xóa tài sản
+- Tiền mặt
+- Chứng khoán
+- Vàng
+- Tiết kiệm
+- Nhập giá thủ công
+- Tính tổng tài sản
+- Tính tài sản ròng
+- Tính giá vốn
+- Tính lãi/lỗ
+- Biểu đồ phân bổ
+- Biểu đồ lịch sử tài sản
+- Nhắc đáo hạn tiết kiệm
+- Face ID
+- Ẩn số dư
+- Sao lưu iCloud
+- Xuất CSV
+
+## 16.2. Không đưa vào MVP
+
+- Đồng bộ ngân hàng
+- Đồng bộ công ty chứng khoán
+- Đặt lệnh mua bán
+- AI khuyến nghị đầu tư
+- Mạng xã hội tài chính
+- Quản lý chi tiêu chi tiết
+- Tự động đọc SMS ngân hàng
+- Tự động đọc email giao dịch
+- Quản lý nhiều thành viên gia đình
+- Hỗ trợ web
+
+---
+
+# 17. Roadmap phát triển
+
+## 17.1. Phiên bản 1.0
+
+Mục tiêu: theo dõi tài sản thủ công.
+
+Tính năng:
+
+- Tiền mặt
+- Chứng khoán
+- Vàng
+- Tiết kiệm
+- Dashboard
+- Báo cáo cơ bản
+- Nhắc đáo hạn
+- Face ID
+- iCloud
+
+## 17.2. Phiên bản 1.5
+
+Mục tiêu: tự động hóa dữ liệu thị trường.
+
+Tính năng:
+
+- Giá chứng khoán tự động
+- Giá vàng tự động
+- Tỷ giá tự động
+- Cảnh báo giá
+- Giá mục tiêu
+- Widget iOS
+- Báo cáo PDF
+
+## 17.3. Phiên bản 2.0
+
+Mục tiêu: quản lý toàn bộ tài sản ròng.
+
+Tính năng:
+
+- Nợ phải trả
+- Bất động sản
+- Trái phiếu
+- Chứng chỉ quỹ
+- Tiền điện tử
+- Bảo hiểm
+- Tài sản gia đình
+
+## 17.4. Phiên bản 3.0
+
+Mục tiêu: phân tích tài sản thông minh.
+
+Tính năng:
+
+- AI tóm tắt biến động tài sản
+- Phân tích mức độ tập trung
+- Phân tích thanh khoản
+- Dự báo dòng tiền
+- Mô phỏng mục tiêu tài chính
+- Tái cân bằng danh mục
+- Báo cáo tài chính cá nhân tự động
+
+---
+
+# 18. Tính năng AI
+
+## 18.1. Báo cáo tự động
+
+Ví dụ:
+
+> Tổng tài sản của bạn tăng 27 triệu đồng trong tháng 7. Phần tăng chủ yếu đến từ danh mục chứng khoán, trong khi giá trị vàng giảm nhẹ. Tiền gửi tiết kiệm hiện chiếm 54% tổng tài sản.
+
+## 18.2. Câu hỏi người dùng có thể đặt
+
+- Tổng tài sản của tôi thay đổi thế nào trong sáu tháng?
+- Khoản đầu tư nào đang có lợi nhuận cao nhất?
+- Tôi đang lỗ nhiều nhất ở tài sản nào?
+- Bao nhiêu phần trăm tài sản có thể chuyển thành tiền ngay?
+- Tháng tới có khoản tiết kiệm nào đáo hạn?
+- Tôi đã nhận bao nhiêu tiền lãi trong năm nay?
+- Tôi đã nhận bao nhiêu cổ tức?
+- Tỷ trọng tài sản hiện tại có mất cân đối không?
+- Nếu cổ phiếu giảm 10%, tài sản ròng của tôi còn bao nhiêu?
+
+## 18.3. Nguyên tắc AI
+
+AI chỉ nên:
+
+- Tóm tắt
+- Phân tích
+- So sánh
+- Phát hiện xu hướng
+- Nhắc người dùng về rủi ro tập trung
+
+AI không nên:
+
+- Cam kết lợi nhuận
+- Khuyến nghị mua bán cụ thể
+- Thay người dùng thực hiện giao dịch
+- Đưa ra tư vấn tài chính như một chuyên gia được cấp phép
+
+---
+
+# 19. Mô hình kinh doanh
+
+## 19.1. Gói miễn phí
+
+- Tối đa 20 tài sản
+- Nhập dữ liệu thủ công
+- Dashboard cơ bản
+- Một thiết bị
+- Lịch sử 6 tháng
+- Xuất CSV cơ bản
+
+## 19.2. Gói Premium
+
+- Không giới hạn tài sản
+- Đồng bộ iCloud
+- Giá thị trường tự động
+- Báo cáo nâng cao
+- Xuất Excel
+- Xuất PDF
+- AI phân tích
+- Quản lý tài sản gia đình
+- Nhiều loại tiền tệ
+- Lịch sử không giới hạn
+- Widget iOS
+- Cảnh báo nâng cao
+
+## 19.3. Giá tham khảo
+
+- 49.000 đồng/tháng
+- 399.000 đồng/năm
+- 699.000 đến 999.000 đồng mua trọn đời
+
+## 19.4. Mô hình phù hợp
+
+Đối với ứng dụng quản lý tài sản cá nhân, có thể ưu tiên:
+
+- Miễn phí giới hạn
+- Mua trọn đời
+- Gói nâng cấp dữ liệu thị trường
+- Gói gia đình
+
+---
+
+# 20. Điểm khác biệt cạnh tranh
+
+## 20.1. Dành cho người dùng Việt Nam
+
+- Hỗ trợ vàng theo lượng, cây, chỉ, phân
+- Hỗ trợ giá mua vào và bán ra
+- Hỗ trợ sổ tiết kiệm ngân hàng Việt Nam
+- Hỗ trợ chứng khoán Việt Nam
+- Hỗ trợ VND làm tiền tệ mặc định
+- Giao diện tiếng Việt
+- Hỗ trợ kỳ hạn và tái tục
+
+## 20.2. Tập trung vào quyền riêng tư
+
+- Không bắt buộc kết nối ngân hàng
+- Không yêu cầu mật khẩu tài chính
+- Dữ liệu có thể lưu offline
+- Face ID
+- Mã hóa
+- Người dùng kiểm soát dữ liệu
+
+## 20.3. Tập trung vào tài sản ròng
+
+Khác với ứng dụng ghi chép chi tiêu, ứng dụng tập trung vào:
+
+- Tích lũy
+- Đầu tư
+- Giá trị tài sản
+- Tài sản ròng
+- Thu nhập thụ động
+- Mục tiêu tài chính
+
+---
+
+# 21. User stories
+
+## 21.1. Người dùng quản lý tài sản
+
+> Là một người dùng, tôi muốn nhập tất cả tài sản để biết tổng tài sản hiện tại.
+
+## 21.2. Người đầu tư chứng khoán
+
+> Là một nhà đầu tư, tôi muốn theo dõi giá vốn và lãi/lỗ của từng mã cổ phiếu.
+
+## 21.3. Người mua vàng
+
+> Là một người tích lũy vàng, tôi muốn biết giá trị hiện tại của vàng theo giá mua vào.
+
+## 21.4. Người gửi tiết kiệm
+
+> Là một người có nhiều sổ tiết kiệm, tôi muốn được nhắc khi sổ sắp đáo hạn.
+
+## 21.5. Người có khoản vay
+
+> Là một người đang vay mua nhà, tôi muốn biết tài sản ròng sau khi trừ dư nợ.
+
+## 21.6. Người quan tâm bảo mật
+
+> Là một người dùng, tôi muốn khóa ứng dụng bằng Face ID và ẩn số dư.
+
+---
+
+# 22. Tiêu chí nghiệm thu MVP
+
+## 22.1. Tài sản
+
+- Người dùng thêm được bốn nhóm tài sản chính.
+- Người dùng sửa và xóa tài sản.
+- App tính đúng tổng tài sản.
+- App không cộng trùng khi chuyển tiền.
+
+## 22.2. Chứng khoán
+
+- Nhập được nhiều lần mua.
+- Tính đúng giá vốn bình quân.
+- Tính đúng lãi/lỗ.
+- Bán một phần không làm sai số lượng còn lại.
+
+## 22.3. Vàng
+
+- Hỗ trợ chỉ và lượng.
+- Tính giá trị theo giá mua vào.
+- Hỗ trợ nhiều lô mua.
+- Hiển thị lãi/lỗ từng lô.
+
+## 22.4. Tiết kiệm
+
+- Tính đúng ngày đáo hạn.
+- Tính được lãi dự kiến.
+- Nhắc trước đáo hạn.
+- Ghi nhận được tất toán.
+
+## 22.5. Bảo mật
+
+- Face ID hoạt động.
+- App tự khóa.
+- Ẩn số dư hoạt động.
+- Dữ liệu không hiển thị trong App Switcher.
+
+## 22.6. Báo cáo
+
+- Có biểu đồ phân bổ.
+- Có lịch sử tổng tài sản.
+- Có báo cáo lãi/lỗ cơ bản.
+- Có xuất CSV.
+
+---
+
+# 23. Cấu trúc sản phẩm tổng thể
+
+```text
+TỔNG QUAN
+├── Tổng tài sản
+├── Tổng nợ
+├── Tài sản ròng
+├── Lãi/lỗ
+├── Thu nhập thụ động
+├── Phân bổ tài sản
+└── Cảnh báo
+
+TÀI SẢN
+├── Tiền mặt (gồm tài khoản ngoại tệ)
+├── Chứng khoán
+├── Vàng
+├── Tiết kiệm
+└── Tài sản khác
+
+NỢ
+├── Vay mua nhà
+├── Vay mua xe
+├── Thẻ tín dụng
+├── Vay tiêu dùng
+└── Khoản phải trả khác
+
+GIAO DỊCH
+├── Nạp tiền
+├── Rút tiền
+├── Chuyển tiền
+├── Mua
+├── Bán
+├── Nhận lãi
+├── Nhận cổ tức
+├── Tất toán
+└── Thanh toán nợ
+
+BÁO CÁO
+├── Tăng trưởng tài sản
+├── Tài sản ròng
+├── Lãi/lỗ
+├── Thu nhập thụ động
+├── Phân bổ tài sản
+├── Kỳ hạn
+└── Nợ
+
+CÀI ĐẶT
+├── Face ID
+├── Mã PIN
+├── Ẩn số dư
+├── iCloud
+├── Xuất dữ liệu
+├── Nguồn giá
+└── Thông báo
+```
+
+---
+
+# 24. Đề xuất triển khai thực tế
+
+## Giai đoạn 1
+
+Tập trung xây dựng:
+
+- Tiền mặt
+- Chứng khoán
+- Vàng
+- Tiết kiệm
+- Dashboard
+- Nhập giá thủ công
+- Face ID
+- iCloud
+- Xuất CSV
+
+## Giai đoạn 2
+
+Bổ sung:
+
+- Giá tự động
+- Nợ
+- Bất động sản
+- Báo cáo PDF
+- Widget
+
+## Giai đoạn 3
+
+Bổ sung:
+
+- AI phân tích
+- Quản lý gia đình
+- Tự động đồng bộ dữ liệu
+- Mô phỏng mục tiêu tài chính
+- Dự báo tài sản ròng
+
+---
+
+# 25. Kết luận
+
+Phiên bản đầu tiên nên tập trung vào một thông điệp đơn giản:
+
+> Theo dõi toàn bộ tài sản cá nhân và biết chính xác tài sản ròng của bạn tại bất kỳ thời điểm nào.
+
+Phạm vi MVP phù hợp nhất:
+
+1. Quản lý tiền mặt.
+2. Quản lý chứng khoán.
+3. Quản lý vàng.
+4. Quản lý tiền gửi tiết kiệm.
+5. Tính tổng tài sản.
+6. Tính tài sản ròng.
+7. Theo dõi lãi/lỗ.
+8. Biểu đồ phân bổ.
+9. Nhắc đáo hạn.
+10. Bảo mật bằng Face ID.
+
+Đây là phạm vi đủ hữu ích cho người dùng, đồng thời vẫn phù hợp để phát triển nhanh bằng SwiftUI, SwiftData và iCloud.
+
+---
+
+# 26. Phản hồi và Brainstorm chi tiết (Review)
+
+> Ghi chú: 10/07/2026. Phần dưới đây là góc nhìn phản biện bổ sung cho tài liệu gốc — không lặp lại nội dung đã có, mà tập trung vào khoảng trống, rủi ro và cơ hội.
+
+## 26.1. Nhận xét tổng thể
+
+Điểm mạnh của tài liệu:
+
+- Mô hình dữ liệu và công thức tài chính (giá vốn bình quân, lãi/lỗ, lãi tiết kiệm) đã đủ chính xác để lập trình ngay.
+- Định vị "tài sản ròng" thay vì "ghi chép chi tiêu" là lựa chọn đúng — thị trường VN đã bão hòa app chi tiêu (Misa, Money Lover, Spendee...) nhưng gần như trống ở mảng theo dõi tài sản ròng.
+- Ưu tiên vàng theo lượng/chỉ/phân, tiết kiệm kỳ hạn ngân hàng VN, chứng khoán VN là lợi thế bản địa hóa thực sự — đối thủ ngoại (Kubera, Copilot Money, Empower) không làm được.
+
+Điểm cần bổ sung: tài liệu mạnh về "xây cái gì" nhưng thiếu phần "vì sao người dùng sẽ chọn app này" (đối thủ cụ thể) và "điều gì có thể làm sản phẩm thất bại" (rủi ro ma sát nhập liệu, rủi ro tin cậy dữ liệu tài chính).
+
+## 26.2. Đối thủ cạnh tranh cần nghiên cứu trước khi build
+
+| App | Điểm mạnh | Điểm yếu so với sản phẩm này |
+|---|---|---|
+| Kubera (US) | Theo dõi net worth đa tài sản, đẹp | Không hỗ trợ vàng theo chỉ/lượng, không tiết kiệm kỳ hạn VN, giá cao (~$150/năm) |
+| Copilot Money (US) | UI xuất sắc, AI phân loại | Thiên về chi tiêu, không có khái niệm vàng/tiết kiệm kỳ hạn |
+| Empower / Personal Capital | Miễn phí, mạnh về đầu tư | Chỉ hoạt động ở thị trường Mỹ, mô hình miễn phí đổi lấy tư vấn đầu tư (khác định hướng "không tư vấn" ở mục 18.3) |
+| Sổ Thu Chi Misa, Money Lover | Phổ biến tại VN, quen thuộc | Trọng tâm là chi tiêu hàng ngày, không có "tài sản ròng" làm chỉ số trung tâm, không hỗ trợ vàng/CK sâu |
+| Excel/Google Sheet cá nhân | Miễn phí, tùy biến cao | Không tự tính, không nhắc đáo hạn, không đồng bộ, dễ sai công thức |
+
+Kết luận: chưa có app nào tại VN kết hợp cả 4 trục (vàng theo đơn vị VN + tiết kiệm kỳ hạn ngân hàng VN + chứng khoán VN + tài sản ròng làm trung tâm) trong một sản phẩm mobile-first, riêng tư, offline-first. Đây là khoảng trống thị trường thật, nhưng cần xác nhận bằng phỏng vấn người dùng trước khi code (xem 26.7).
+
+## 26.3. Rủi ro lớn nhất: ma sát nhập liệu thủ công
+
+Đây là rủi ro sống còn của sản phẩm này, chưa được nêu rõ trong tài liệu gốc. Ứng dụng không kết nối ngân hàng (đúng cho MVP vì lý do bảo mật/pháp lý), nghĩa là **toàn bộ giá trị sản phẩm phụ thuộc vào việc người dùng chịu nhập liệu đều đặn**. Nếu nhập liệu quá tốn công, người dùng dùng thử vài ngày rồi bỏ — đây là nguyên nhân phổ biến nhất khiến app quản lý tài chính cá nhân chết yểu.
+
+Đề xuất giảm ma sát (nên đưa một phần vào MVP hoặc v1.5 thay vì để tới v2/v3):
+
+- **Nhập nhanh qua Widget/Siri Shortcuts**: cập nhật giá vàng, giá cổ phiếu, số dư mà không cần mở app.
+- **CSV import từ sao kê công ty chứng khoán**: đơn giản hơn nhiều so với đồng bộ API (mục 13.3), không có rủi ro pháp lý/bảo mật của việc lưu thông tin đăng nhập, nhưng vẫn loại bỏ phần lớn công sức nhập tay danh mục chứng khoán ban đầu.
+- **Mẫu nhập nhanh (template)**: ví dụ "nhập lãi tiết kiệm tháng" chỉ cần xác nhận số tiền gợi ý sẵn theo công thức mục 4.4.4.
+- **Nhắc nhập liệu định kỳ thông minh**: không chỉ nhắc đáo hạn, mà nhắc "đã 14 ngày chưa cập nhật tài sản nào" để giữ dữ liệu sống.
+- **Onboarding rút gọn**: cho phép người dùng nhập tổng số tài sản ước tính trong 60 giây đầu tiên (không cần chi tiết từng mã CK) để thấy giá trị ngay, rồi hoàn thiện chi tiết dần sau.
+
+## 26.4. Khoảng trống trong mô hình dữ liệu / kỹ thuật
+
+### Đa tiền tệ và snapshot lịch sử
+
+`ValuationSnapshot` (mục 14.6) lưu giá trị theo VND nhưng không nói rõ tỷ giá quy đổi tại thời điểm snapshot được lưu lại. Nếu chỉ dùng tỷ giá hiện tại để tính lại lịch sử, biểu đồ tăng trưởng tài sản (mục 6.3) sẽ sai lệch khi tỷ giá biến động. Cần lưu tỷ giá quy đổi tại từng thời điểm snapshot, không tính lại từ tỷ giá hiện tại.
+
+### Chính sách tần suất snapshot
+
+Tài liệu chưa quy định snapshot được tạo khi nào: mỗi lần người dùng sửa số liệu, hay theo lịch cố định hàng ngày? Đề xuất: snapshot tự động 1 lần/ngày (ví dụ lúc 00:00 hoặc lần mở app đầu tiên trong ngày) + snapshot bổ sung khi có giao dịch làm thay đổi tổng tài sản đáng kể. Cần xử lý nội suy khi có ngày trống dữ liệu trong biểu đồ.
+
+### Đồng bộ CloudKit/SwiftData
+
+SwiftData + CloudKit từng có vấn đề về resolve conflict khi đồng bộ hai thiết bị (đặc biệt ở các bản iOS đầu). Với dữ liệu tài chính, sai lệch số dư do conflict sync là rủi ro nghiêm trọng về lòng tin người dùng. Đề xuất: giao dịch (`AssetTransaction`) nên là append-only log, số dư tài sản luôn được **tính lại** từ log giao dịch thay vì lưu trực tiếp — giúp merge conflict giữa thiết bị an toàn hơn nhiều so với việc đồng bộ trực tiếp field `balance`.
+
+### Thuế bán chứng khoán tại Việt Nam
+
+Mục 4.2.4 để trường "Thuế bán" nhập tay. Theo quy định hiện hành, thuế bán chứng khoán cá nhân tại VN là 0,1% trên **giá trị bán** (không phải trên lãi), áp dụng bất kể lãi hay lỗ. Đề xuất: tự động tính sẵn 0,1% × giá trị bán làm giá trị mặc định, cho phép người dùng chỉnh tay nếu cần (một số trường hợp đặc biệt).
+
+## 26.5. Rủi ro pháp lý và tuân thủ
+
+- **Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân**: vì app lưu dữ liệu tài chính nhạy cảm, cần chính sách bảo mật rõ ràng, đặc biệt nếu sau này có tính năng đồng bộ/tài khoản gia đình (mục 20.2 nói "không chia sẻ dữ liệu cho bên thứ ba" — cần thể hiện cụ thể trong Privacy Policy nộp App Store).
+- **App Store category Finance**: Apple thường review kỹ hơn với app tài chính (privacy nutrition label chi tiết, có thể yêu cầu giải trình nếu ứng dụng đề cập "cổ phiếu", "đầu tư").
+- **Tính năng AI (mục 18)**: cần disclaimer rõ ràng ngay trong UI (không chỉ trong tài liệu nội bộ) rằng AI không đưa ra tư vấn đầu tư, để tránh rủi ro liên quan đến quy định về tư vấn chứng khoán của Ủy ban Chứng khoán Nhà nước.
+
+## 26.6. Rủi ro mô hình kinh doanh
+
+- **Mua trọn đời (lifetime, mục 19.3) ăn mòn doanh thu dài hạn**: nếu phần lớn người dùng trả phí chọn gói trọn đời sớm, dòng doanh thu subscription (nuôi chi phí API giá thị trường ở mục 13.2) sẽ không bền vững. Đề xuất: giới hạn số lượng/thời gian ưu đãi lifetime (ví dụ chỉ trong giai đoạn ra mắt), hoặc định giá lifetime đủ cao (tương đương 2-3 năm subscription).
+- **Giới hạn "20 tài sản" ở gói miễn phí (mục 19.1)** có thể quá chặt với đúng nhóm người dùng mục tiêu (người có nhiều tài khoản ngân hàng + nhiều lô cổ phiếu + nhiều sổ tiết kiệm dễ vượt 20 mục chỉ sau vài tháng dùng thật). Cân nhắc giới hạn theo số **giao dịch/tháng** hoặc nâng ngưỡng lên 30-40, để người dùng trải nghiệm đủ lâu trước khi chạm giới hạn và quyết định nâng cấp.
+
+## 26.7. Câu hỏi cần trả lời trước khi bắt đầu code
+
+1. Nhóm người dùng đầu tiên nhắm tới là ai — nhà đầu tư chứng khoán, người tích lũy vàng, hay người gửi tiết kiệm nhiều ngân hàng? Câu trả lời quyết định nhóm tài sản nào nên làm tốt nhất trước, thay vì làm đều cả 4 nhóm cùng lúc như mục 16.1 hiện đề xuất.
+2. Có kế hoạch build một mình hay có đội ngũ? Timeline mong muốn cho v1.0 là bao lâu?
+3. MVP ở mục 16.1 hiện bao gồm cả 4 nhóm tài sản + đầy đủ giao dịch + Face ID + iCloud + CSV — khá lớn cho một "MVP" thực sự. Có nên cắt xuống còn 1-2 nhóm tài sản (ví dụ Tiền mặt + Chứng khoán) để ra mắt nhanh hơn và học từ người dùng thật trước khi làm Vàng/Tiết kiệm?
+4. Có ý định mở rộng Android hoặc web sau này không? Ảnh hưởng tới việc có nên tách logic tính toán tài chính thành module thuần Swift độc lập (dễ port) ngay từ đầu hay không.
+5. Ứng dụng có cần tài khoản người dùng (email/Apple ID) hay hoàn toàn local-first không đăng nhập? Ảnh hưởng tới toàn bộ kiến trúc đồng bộ và tính năng gia đình (mục 7.5, 19.2).
+
+## 26.8. Gợi ý tên sản phẩm
+
+Trong 8 tên đề xuất ở mục 1.1, "**Tích Sản**" và "**Tài Sản 360**" là hai lựa chọn mạnh nhất: ngắn, thuần Việt, gợi đúng hành vi "tích lũy tài sản" mà nhóm người dùng mục tiêu đang làm. "NetWorth VN" / "My Wealth VN" nghe quốc tế hơn nhưng khó phát âm/nhớ với người dùng phổ thông VN. Trước khi chốt tên, nên kiểm tra: (a) trùng tên trên App Store VN, (b) tên miền/tài khoản mạng xã hội còn trống, (c) không trùng nhãn hiệu đã đăng ký tại VN.
+
+## 26.9. Đề xuất bước tiếp theo
+
+1. Phỏng vấn 10–15 người dùng mục tiêu (nhà đầu tư CK, người mua vàng tích lũy, người có nhiều sổ tiết kiệm) để xác nhận pain point thật trước khi code — đặc biệt hỏi họ hiện đang dùng công cụ gì (Excel? nhớ nhẩm? không theo dõi?).
+2. Thiết kế wireframe cho Dashboard và luồng "thêm tài sản" trước, vì đây là hai điểm chạm quyết định người dùng có tiếp tục dùng app hay không.
+3. Chốt lại phạm vi MVP tối giản hơn mục 16.1 — có thể chỉ 2 nhóm tài sản đầu tiên — để rút ngắn thời gian ra mắt và học nhanh từ dữ liệu thật.
+4. Viết unit test cho toàn bộ công thức tài chính (giá vốn bình quân, lãi/lỗ, lãi tiết kiệm, quy đổi ngoại tệ) trước khi build UI — sai số ở đây phá vỡ lòng tin người dùng nhanh hơn bất kỳ lỗi giao diện nào.
+5. Đăng ký Apple Developer Program, kiểm tra tên ứng dụng khả dụng trên App Store, và soạn Privacy Policy sớm vì app Finance category thường bị review kỹ.
+
+---
+
+# 27. Điều chỉnh định hướng: Sử dụng cá nhân, phi thương mại
+
+> Cập nhật 10/07/2026. Chủ dự án xác nhận: xây dựng ứng dụng cho **cá nhân dùng + chia sẻ xem chung với 1–2 người thân** (vợ/chồng/gia đình), **không thương mại hóa**. Phần dưới đây điều chỉnh lại các phần liên quan trong tài liệu gốc. Phương án phân phối ứng dụng (Apple Developer Program trả phí hay tài khoản Apple ID miễn phí) **chưa chốt**, sẽ quyết định sau khi app gần hoàn thiện — kiến trúc bên dưới được thiết kế để không phụ thuộc vào lựa chọn này.
+
+## 27.1. Các phần trong tài liệu gốc không còn áp dụng
+
+Vì không thương mại hóa, các phần sau nên **bỏ hoàn toàn** khỏi phạm vi triển khai:
+
+- Mục 19 (Mô hình kinh doanh: gói miễn phí, Premium, giá bán, lifetime).
+- Mục 26.6 (Rủi ro mô hình kinh doanh).
+- Mục 26.8 (Kiểm tra trademark/tên thương mại) — đặt tên tùy ý, không cần tra cứu pháp lý.
+- Mọi cơ chế giới hạn tính năng theo gói (feature gating), paywall, in-app purchase.
+- ASO (App Store Optimization), chiến lược go-to-market, quảng bá.
+- Mục 26.2 (đối thủ cạnh tranh) vẫn **giữ lại để tham khảo ý tưởng tính năng hay** (ví dụ cách Kubera trình bày net worth), nhưng bỏ mục tiêu "thắng đối thủ" hay định vị thị trường.
+- Mục 26.9 điểm 1 (phỏng vấn người dùng để validate thị trường) không cần thiết — người dùng duy nhất đã biết rõ nhu cầu của chính mình.
+
+## 27.2. Lợi ích kỹ thuật khi làm phi thương mại
+
+- **Không cần license/subscription/paywall** → giảm đáng kể độ phức tạp code, bỏ hẳn tầng "entitlement checking".
+- **Không cần analytics/crash reporting bên thứ ba** (Firebase, Mixpanel, Sentry...) → đúng tinh thần "riêng tư tuyệt đối" đã đề ra ở mục 20.2, đồng thời tránh mọi network call không cần thiết. App có thể hoàn toàn offline-first thật sự, không có bất kỳ SDK theo dõi nào.
+- **Không cần tuân thủ nghiêm ngặt App Store Finance category guidelines** (không public listing), rút ngắn rủi ro bị từ chối duyệt.
+- **Không cần Privacy Policy công khai** nếu chỉ cài qua Xcode trực tiếp lên thiết bị cá nhân. Nếu sau này dùng TestFlight để chia sẻ với người thân (xem 27.4), Apple vẫn yêu cầu khai báo Privacy cơ bản nhưng không cần trang chính sách công khai đầy đủ như app thương mại.
+- Có thể tùy biến sâu theo đúng nhu cầu cá nhân (thêm loại tài sản đặc thù của riêng gia đình bạn, đơn vị đo lường riêng...) mà không phải lo ảnh hưởng số đông người dùng hay hỗ trợ đa dạng use-case.
+
+## 27.3. Chia sẻ dữ liệu với người thân — thay đổi kiến trúc cần lưu ý
+
+Đây là điểm quan trọng nhất phát sinh từ việc "chia sẻ xem chung với 1–2 người thân": vì người thân dùng **Apple ID khác**, cơ chế iCloud cá nhân thông thường (mục 15.1, 15.3) **không tự động chia sẻ được** — CloudKit private database chỉ đồng bộ giữa các thiết bị cùng một Apple ID.
+
+Cần bổ sung vào kiến trúc:
+
+- **CloudKit Shared Database (CKShare)**: cho phép chủ dữ liệu (bạn) mời người thân qua link chia sẻ, dữ liệu đồng bộ hai chiều hoặc chỉ đọc tùy cấu hình — đây là cơ chế đúng để dùng thay vì tự xây server riêng.
+- **Phân quyền xem/sửa**: nên xác định rõ ngay từ đầu — người thân chỉ **xem** (read-only) hay được **sửa/thêm giao dịch**? Gợi ý: mặc định read-only cho người thân, chỉ chủ sở hữu (bạn) mới thêm/sửa giao dịch, để tránh sai lệch dữ liệu do nhiều người cùng nhập.
+- **Không cần thiết kế multi-tenant phức tạp**: vì chỉ 1–2 người thân, không cần hệ thống "quản lý tài khoản gia đình" nhiều tầng như mục 7.5 dự tính cho sản phẩm thương mại — một cơ chế mời qua link đơn giản là đủ.
+- Việc này **có thể lùi sang giai đoạn 2** (sau khi bản dùng một mình đã ổn định) thay vì làm ngay từ v1.0, vì CKShare cộng thêm độ phức tạp đáng kể cho MVP.
+
+## 27.4. Phân phối ứng dụng — chưa chốt, cả hai phương án đều khả thi
+
+Vì quyết định phân phối chưa chốt, ghi lại hai lựa chọn để tham khảo khi cần quyết định (không chặn việc code phần lõi):
+
+| Phương án | Chi phí | Ưu điểm | Nhược điểm |
+|---|---|---|---|
+| Apple ID miễn phí + Xcode | 0đ | Không tốn phí | Phải cắm lại thiết bị vào máy tính để rebuild mỗi 7 ngày; **không hỗ trợ TestFlight** nên không chia sẻ được cho người thân theo cách chính thống |
+| Apple Developer Program | ~$99/năm (~2,5 triệu đồng) | Build dùng cả năm không cần rebuild liên tục; dùng được TestFlight (tối đa 100 người nội bộ, build hết hạn sau 90 ngày cần renew); cần thiết nếu muốn dùng CKShare ổn định lâu dài | Có phí hàng năm |
+
+Vì mục 27.3 đã xác định cần chia sẻ với người thân, **Apple Developer Program gần như là điều kiện bắt buộc về sau** (TestFlight hoặc CKShare đều hoạt động ổn định hơn nhiều với tài khoản trả phí). Có thể bắt đầu code bằng Apple ID miễn phí trong giai đoạn phát triển một mình, và chỉ nâng cấp lên Developer Program khi chuẩn bị mời người thân dùng thử.
+
+## 27.5. MVP điều chỉnh cho nhu cầu cá nhân
+
+Khác với mục 16.1 (MVP hướng thương mại, cần đủ rộng để thu hút nhiều nhóm người dùng), MVP cá nhân nên **bắt đầu từ đúng những loại tài sản bạn hiện đang có**, thay vì cố làm đều cả 4 nhóm (Tiền mặt, Chứng khoán, Vàng, Tiết kiệm) ngay từ đầu. Đề xuất thứ tự triển khai thực tế:
+
+1. **Giai đoạn cá nhân** (chỉ mình bạn, Apple ID miễn phí đủ dùng): chọn 1–2 nhóm tài sản bạn đang nắm giữ nhiều nhất trước, cộng Dashboard tổng tài sản/tài sản ròng cơ bản, Face ID. Bỏ qua CSV export, báo cáo nâng cao, nhắc nhở phức tạp — thêm dần khi thực sự cần trong lúc dùng.
+2. **Giai đoạn hoàn thiện cá nhân**: bổ sung nốt các nhóm tài sản còn lại, biểu đồ lịch sử, nhắc đáo hạn — theo đúng nhịp độ nhu cầu thật phát sinh khi dùng hàng ngày, không cần theo áp lực roadmap thương mại ở mục 17.
+3. **Giai đoạn chia sẻ gia đình**: nâng cấp Apple Developer Program, thêm CKShare (mục 27.3), mời người thân.
+
+Vì không có áp lực tăng trưởng hay giữ chân người dùng trả phí, **không bắt buộc phải làm các tính năng giảm ma sát nhập liệu ở mục 26.3** (Widget, Siri Shortcuts, CSV import) ngay từ đầu — có thể bổ sung sau này nếu chính bạn thấy nhập liệu thủ công bất tiện trong quá trình dùng thật.
+
+## 27.6. Bảo mật — vẫn nên giữ nguyên dù không thương mại
+
+Dữ liệu vẫn là thông tin tài chính thật của bạn và người thân, nên các nguyên tắc bảo mật ở mục 12 (Face ID, mã hóa cục bộ, ẩn số dư, không gửi dữ liệu ra bên thứ ba) **vẫn nên giữ nguyên đầy đủ**, không vì "cá nhân dùng" mà giảm nhẹ — rủi ro mất thiết bị hay lộ dữ liệu tài chính là như nhau bất kể app có thương mại hóa hay không.
+
+---
+
+# 28. Điều chỉnh kiến trúc: Backend chuyển sang Supabase thay vì CloudKit/iCloud
+
+> Cập nhật 10/07/2026. Chủ dự án xác nhận: **không cần quan tâm tới Apple ID cho việc đồng bộ/chia sẻ dữ liệu** — dữ liệu sẽ được lưu trên **Supabase** (Postgres + Realtime + Storage) thay vì CloudKit. Đây là thay đổi tốt: nó **giải quyết gọn** vấn đề lớn nhất nêu ở mục 27.3 (chia sẻ dữ liệu giữa các Apple ID khác nhau qua CKShare), vì Supabase không phụ thuộc Apple ID chút nào.
+>
+> **Cập nhật tiếp theo cùng ngày**: chủ dự án xác nhận thêm **không cần màn hình đăng nhập/tạo tài khoản** — mở app lên là thấy dữ liệu ngay. Điều này làm mục 28.1/28.3 bản đầu (dựa trên Supabase Auth theo từng người) không còn đúng, đã được sửa lại bên dưới thành mô hình **không xác thực người dùng (no-auth)**.
+
+## 28.1. Vì sao thay đổi này đơn giản hóa mọi thứ
+
+- CKShare (mục 27.3) yêu cầu người thân dùng chung sinh thái Apple và phức tạp về phân quyền; Supabase thay thế bằng một **project dùng chung duy nhất**, app kết nối thẳng bằng Supabase URL + anon key nhúng sẵn trong ứng dụng — không có màn hình đăng nhập, không phân biệt Apple ID, hoạt động được kể cả nếu sau này làm bản Android.
+- Chia sẻ dữ liệu gia đình trở nên cực đơn giản: **ai cài app cũng thấy chung một bộ dữ liệu** — giống như mọi người cùng mở chung một Google Sheet không cần đăng nhập riêng. Không còn khái niệm "mời người thân qua email" hay phân quyền owner/viewer ở tầng tài khoản.
+- Tách biệt hoàn toàn hai mối quan tâm từng bị gộp ở mục 27.4: **(a) cài đặt ứng dụng lên iPhone** (vẫn cần một Apple ID nào đó để ký code — free hoặc trả phí đều được, không ảnh hưởng dữ liệu) và **(b) đồng bộ/chia sẻ dữ liệu** (giờ hoàn toàn do Supabase đảm nhiệm, không qua Apple). Khuyến nghị "gần như bắt buộc Developer Program" ở mục 27.4 **không còn đúng nữa** — Apple ID miễn phí là đủ cho việc cài app; Developer Program chỉ còn cần nếu muốn dùng TestFlight cho tiện phân phối bản build cho người thân, không còn liên quan gì đến chia sẻ dữ liệu.
+
+## 28.2. Kiến trúc lưu trữ đề xuất
+
+Thay thế mục 15.1 và 15.3:
+
+```text
+Nền tảng cập nhật:
+- iOS, Swift, SwiftUI (giữ nguyên)
+- Supabase (Postgres, Auth, Realtime, Storage) — thay cho CloudKit/iCloud
+- supabase-swift (client SDK chính thức)
+- SwiftData hoặc lớp cache cục bộ đơn giản — dùng làm bộ nhớ đệm offline, không còn là nguồn dữ liệu chính
+- Local Notifications, Face ID (giữ nguyên, không đổi)
+```
+
+Mô hình đồng bộ đề xuất: **Supabase là nguồn dữ liệu chính (source of truth)**, có một lớp cache cục bộ để app vẫn xem được dữ liệu khi mất mạng (đúng tinh thần "hoạt động offline" ở mục 1.2/2.2), và đồng bộ lại khi có kết nối. Ghi dữ liệu khi offline nên xếp hàng (queue) và đẩy lên Supabase khi có mạng trở lại — cần xử lý xung đột tương tự gợi ý ở mục 26.4 (ưu tiên transaction log append-only thay vì ghi đè trực tiếp số dư).
+
+## 28.3. Chia sẻ dữ liệu gia đình — mô hình không đăng nhập (no-auth)
+
+Vì đã xác nhận **không cần tạo tài khoản**, bỏ hẳn thiết kế `households`/`household_members`/Supabase Auth ở bản trước. Mô hình thay thế:
+
+- Toàn bộ thiết bị cài app (của bạn và người thân) dùng chung **một Supabase project duy nhất**, kết nối bằng cùng một cặp Supabase URL + anon key nhúng trong app — không có bước đăng nhập, không phân biệt "ai đang xem".
+- Các bảng tương ứng mục 14 (asset_accounts, assets, asset_transactions, savings_deposits, liabilities, valuation_snapshots) **không cần cột `owner_id`/`household_id`** nữa — chỉ là những bảng dữ liệu dùng chung phẳng, đúng như mô hình struct gốc ở mục 14.
+- Nếu muốn biết ai vừa thêm/sửa một giao dịch (chỉ để tiện theo dõi, không phải để phân quyền), có thể thêm một cột đơn giản kiểu `edited_by text` cho người dùng tự chọn tên hiển thị trong Cài đặt (ví dụ "Chồng"/"Vợ") — đây chỉ là nhãn hiển thị, không phải cơ chế xác thực.
+
+**Đánh đổi cần biết rõ**: vì không có xác thực, **không thể enforce ở tầng backend** việc "người thân chỉ được xem, không được sửa" như bản thiết kế owner/viewer trước đó — bất kỳ ai cài app đều có thể đọc và ghi toàn bộ dữ liệu (đúng tinh thần "vào là thấy dữ liệu ngay"). Nếu sau này muốn giới hạn một thiết bị chỉ xem, cách khả thi duy nhất ở mức UI (không phải bảo mật thật): thêm công tắc "chế độ chỉ xem" cục bộ trong app của thiết bị đó — mang tính tự giác, không ngăn được nếu ai đó cố tình tắt đi. Đây là đánh đổi hợp lý cho quy mô 2-3 người thân tin cậy lẫn nhau, nhưng nên ghi nhớ nếu sau này mở rộng quy mô.
+
+## 28.4. Điều cần xem lại trong phần bảo mật/riêng tư (mục 12, 20.2)
+
+Vì dữ liệu giờ nằm trên một backend đám mây của bên thứ ba (Supabase) thay vì hoàn toàn cục bộ + iCloud cá nhân, một số tuyên bố ở mục 12.1 và 20.2 cần hiểu lại cho đúng thực tế mới, không phải bỏ đi:
+
+- "Cho phép người dùng sử dụng hoàn toàn offline" → vẫn giữ được nhờ lớp cache cục bộ (mục 28.2), nhưng **tạo mới/chỉnh sửa khi offline sẽ chỉ đồng bộ khi có mạng trở lại**, không còn là "hoàn toàn offline" theo nghĩa tuyệt đối như bản CloudKit-only ban đầu.
+- "Không chia sẻ dữ liệu cho bên thứ ba" (mục 12.1) → về mặt kỹ thuật, Supabase (dù bạn tự quản lý project) vẫn là một nhà cung cấp hạ tầng thứ ba lưu trữ dữ liệu tài chính của bạn. Vì là dự án cá nhân nên chấp nhận được, nhưng nên: bật mã hóa kết nối (Supabase mặc định dùng TLS), cân nhắc chọn region lưu trữ gần/phù hợp, và **tuyệt đối không nhúng service_role key (quyền cao nhất, bỏ qua mọi RLS) vào app** — chỉ dùng anon key.
+- Vì mô hình no-auth (mục 28.3) không có `auth.uid()` để tham chiếu, RLS theo kiểu "user chỉ thấy dữ liệu của chính mình" không áp dụng được. Vẫn nên **bật RLS và khai báo policy tường minh cho phép `anon` role đọc/ghi** (thay vì tắt hẳn RLS) — về hiệu lực thì tương đương, nhưng giữ RLS bật giúp Supabase Dashboard không cảnh báo bảng "không có bảo vệ" và dễ siết lại sau này nếu cần. Vì anon key được nhúng thẳng trong app, **lớp bảo vệ thực sự nằm ở việc app không public/không ai ngoài gia đình có bản cài đặt** — không phải ở RLS.
+- Vẫn nên giữ mã hóa cục bộ cho dữ liệu cache trên thiết bị (mã hóa file cache nếu SwiftData hỗ trợ) để nếu mất thiết bị, dữ liệu cache cũng không lộ dễ dàng. Khuyến nghị bật Face ID/mã PIN (mục 12.2) làm lớp chắn chính, vì giờ đây đó là **tuyến phòng thủ đầu tiên và gần như duy nhất** ở cấp ứng dụng khi không có đăng nhập.
+
+## 28.5. Chi phí Supabase
+
+Free tier của Supabase (tại thời điểm viết) đủ rộng rãi cho quy mô 1 gia đình vài người dùng: giới hạn theo dung lượng database và storage ở mức khá cao so với nhu cầu ghi vài nghìn giao dịch tài chính cá nhân. Vì vậy **không cần ngân sách vận hành hàng tháng** ở giai đoạn đầu; chỉ cần nâng cấp gói trả phí nếu sau này lưu trữ nhiều tệp đính kèm (ảnh hóa đơn, hợp đồng) vượt hạn mức storage miễn phí.
+
+## 28.6. Việc cần làm khi bắt đầu code phần backend
+
+1. Tạo project Supabase, thiết kế schema Postgres tương ứng các struct ở mục 14 (AssetAccount, Asset, AssetTransaction, SavingsDeposit, Liability, ValuationSnapshot) — mỗi struct → một bảng, **không cần cột owner_id/household_id** vì dùng mô hình dữ liệu chung (mục 28.3).
+2. Bật Row Level Security cho toàn bộ bảng với policy tường minh "cho phép `anon` đọc/ghi" (mục 28.4) — không để RLS ở trạng thái tắt mặc định.
+3. Cài `supabase-swift`, khởi tạo client trực tiếp bằng URL + anon key, **không cấu hình Auth** — app mở lên gọi thẳng API là thấy dữ liệu, đúng yêu cầu "không cần tạo tài khoản".
+4. Thiết kế lớp Repository (đúng tinh thần Repository Pattern đã đề xuất ở mục 15.2) để tách biệt logic gọi Supabase khỏi UI — giúp dễ thay đổi backend sau này nếu cần.
+
+---
+
+# 29. Phase và Sprint triển khai chi tiết
+
+> Cập nhật 11/07/2026. Chốt lại từ trao đổi trực tiếp: (a) xây **tất cả 4 nhóm tài sản cùng lúc** (Tiền mặt, Chứng khoán, Vàng, Tiết kiệm) thay vì chọn 1-2 nhóm trước như gợi ý ở mục 27.5; (b) đã **có sẵn tài khoản chứng khoán DNSE** nên tích hợp API giá được ngay, không cần bước đăng ký; (c) nhịp làm việc là **"làm cùng một lần"** — không chia theo tuần cố định. Vì vậy các Sprint dưới đây là **gói công việc theo phụ thuộc kỹ thuật** (cái gì phải xong trước cái gì), không phải lịch theo tuần/ngày. Kích thước mỗi sprint được gắn nhãn định tính: **S** (nhỏ, 1-2 buổi), **M** (vừa, 3-5 buổi), **L** (lớn, cỡ 1-2 tuần tranh thủ ngoài giờ).
+
+## 29.1. Tổng quan 5 Phase
+
+| Phase | Mục tiêu | Số sprint | Phụ thuộc |
+|---|---|---|---|
+| Phase 1 | Nền tảng + MVP đủ 4 nhóm tài sản, nhập giá thủ công | 7 | Không |
+| Phase 2 | Tự động hóa giá thị trường — tích hợp API BTMC (vàng) và DNSE (chứng khoán) | 4 | Phase 1 xong Sprint 1.2 (data layer) |
+| Phase 3 | Mở rộng loại tài sản (nợ, bất động sản) + báo cáo/nhắc nhở đầy đủ | 3 | Phase 1 |
+| Phase 4 | Chia sẻ dữ liệu với người thân (mô hình no-auth, mục 28.3) | 3 | Phase 1, không cần chờ Phase 2/3 |
+| Phase 5 | Thông minh hóa: AI tóm tắt, cảnh báo tỷ trọng, mô phỏng mục tiêu | 3 | Phase 1, nên làm sau khi có đủ dữ liệu lịch sử thật (vài tháng dùng) |
+
+Thứ tự khuyến nghị: **Phase 1 → Phase 2 → (Phase 3 và Phase 4 làm xen kẽ tùy hứng) → Phase 5 cuối cùng** (Phase 5 cần dữ liệu lịch sử thật để có ý nghĩa, làm sớm sẽ vô dụng vì chưa có gì để phân tích).
+
+---
+
+## 29.2. PHASE 1 — Nền tảng và MVP đủ 4 nhóm tài sản
+
+### Sprint 1.1 (M) — Setup hạ tầng
+
+- [ ] Tạo Supabase project, ghi lại Project URL + anon key.
+- [ ] Tạo schema Postgres cho 6 bảng ở mục 14: `asset_accounts`, `assets`, `asset_transactions`, `savings_deposits`, `liabilities`, `valuation_snapshots` — không có cột `owner_id`/`household_id` (đúng mô hình no-auth mục 28.3).
+- [ ] Bật RLS trên toàn bộ bảng + policy tường minh cho phép role `anon` đọc/ghi (mục 28.4) — không tắt RLS.
+- [ ] Tạo Xcode project SwiftUI, cài `supabase-swift`, khởi tạo client bằng URL + anon key, không cấu hình Auth.
+- [ ] Dựng khung điều hướng 5 tab (mục 7): Tổng quan, Tài sản, Giao dịch, Báo cáo, Cài đặt (có thể để trống nội dung).
+
+**Định nghĩa hoàn thành:** app chạy được trên simulator, đọc/ghi thử 1 dòng test vào Supabase thành công từ Xcode.
+
+### Sprint 1.2 (L) — Data layer & Repository
+
+- [ ] Định nghĩa struct Swift theo đúng mục 14.1-14.6.
+- [ ] Viết Repository Pattern (mục 15.2) cho từng entity, tách biệt logic gọi Supabase khỏi UI.
+- [ ] Lớp cache cục bộ (SwiftData) để xem được dữ liệu khi mất mạng (mục 28.2) — Supabase là source of truth, SwiftData chỉ là cache.
+- [ ] Hàng đợi ghi khi offline (queue), đẩy lên Supabase khi có mạng lại.
+- [ ] **Quan trọng (mục 26.4):** số dư/số lượng tài sản luôn được **tính lại từ `asset_transactions`** (append-only log), không lưu trực tiếp field `balance`/`quantity` rồi đồng bộ đè — giúp an toàn khi có nhiều thiết bị ghi cùng lúc (liên quan Phase 4).
+
+**Định nghĩa hoàn thành:** có thể thêm/sửa/xóa 1 bản ghi test cho mỗi entity qua code, dữ liệu vẫn đọc được khi tắt wifi (từ cache).
+
+### Sprint 1.3 (L) — CRUD UI cho 4 nhóm tài sản
+
+- [ ] Màn "Thêm tài sản" cho Tiền mặt/Tài khoản (mục 4.1, luồng 8.1) — hỗ trợ chọn `Tiền tệ` khác VND ngay trong form này (mục 4.1.5), nhập tỷ giá khi tài khoản không phải VND.
+- [ ] Màn "Thêm tài sản" cho Chứng khoán (mục 4.2, luồng 8.2) — bao gồm chọn tài khoản CK, mã CK, số lượng, giá mua, phí.
+- [ ] Màn "Thêm tài sản" cho Vàng (mục 4.3, luồng 8.4) — loại vàng, thương hiệu, đơn vị (lượng/cây/chỉ/phân/gram), giá mua.
+- [ ] Màn "Thêm tài sản" cho Tiết kiệm (mục 4.4, luồng 8.5) — ngân hàng, kỳ hạn, lãi suất, tự tính ngày đáo hạn.
+- [ ] Tab Tài sản (mục 7.2): danh sách theo nhóm, mỗi nhóm hiện tổng giá trị/giá vốn/lãi-lỗ/tỷ trọng/số lượng khoản mục.
+- [ ] Sửa/xóa cho cả 4 nhóm.
+
+**Định nghĩa hoàn thành:** nhập được ít nhất 1 khoản mục thật của chính bạn cho cả 4 nhóm, thấy đúng trong danh sách.
+
+### Sprint 1.4 (L) — Giao dịch & công thức tài chính
+
+- [ ] Enum `TransactionType` đầy đủ (mục 9.1) + form nhập giao dịch chung (mục 9.2).
+- [ ] Mua/bán chứng khoán (luồng 8.3): tính giá vốn bình quân theo mục 4.2.5, xử lý bán một phần không sai số lượng còn lại.
+- [ ] **Thuế bán chứng khoán VN**: tự động gợi ý 0,1% × giá trị bán làm mặc định (theo đề xuất mục 26.4), cho phép sửa tay.
+- [ ] Gửi/tất toán tiết kiệm (luồng 8.5/8.6): công thức lãi cuối kỳ (mục 4.4.3), lãi hàng tháng (mục 4.4.4), lãi trước hạn (mục 4.4.5).
+- [ ] Chuyển tiền giữa tài khoản (luồng 8.7) — đảm bảo không cộng trùng, tổng tài sản không đổi khi chuyển (mục 4.1.4).
+- [ ] Tính lãi/lỗ, tỷ suất lợi nhuận (mục 3.6, 3.7) cho từng tài sản.
+- [ ] Tính giá trị quy đổi VND và lãi/lỗ tỷ giá cho tài khoản ngoại tệ theo công thức mục 4.1.5.
+- [ ] **Unit test bắt buộc** (theo khuyến nghị 26.9 điểm 4) cho: giá vốn bình quân, lãi/lỗ, lãi tiết kiệm 3 công thức, quy đổi ngoại tệ và lãi/lỗ tỷ giá (mục 4.1.5) — viết test trước khi nối UI, vì sai số ở đây phá vỡ lòng tin nhanh nhất.
+
+**Định nghĩa hoàn thành:** mua 2 lần 1 mã CK với giá khác nhau ra đúng giá vốn bình quân theo ví dụ mục 4.2.5; test hết mọi công thức mục 3 và 4.4.3-4.4.5 pass.
+
+### Sprint 1.5 (M) — Dashboard & biểu đồ
+
+- [ ] Tab Tổng quan (mục 7.1, 6.1): tổng tài sản, tài sản ròng, tổng nợ, biến động trong tháng.
+- [ ] Thẻ chỉ số (mục 6.2).
+- [ ] Biểu đồ phân bổ tài sản (donut chart, mục 6.3) bằng Swift Charts.
+- [ ] Biểu đồ tăng trưởng tài sản theo 7 ngày/1 tháng/3 tháng/6 tháng/1 năm/toàn bộ — cần `valuation_snapshots`.
+- [ ] Snapshot tự động: 1 lần/ngày (mở app lần đầu trong ngày) + khi có giao dịch làm thay đổi tổng tài sản đáng kể (theo đề xuất mục 26.4) — xử lý nội suy ngày trống dữ liệu trên biểu đồ.
+
+**Định nghĩa hoàn thành:** biểu đồ tăng trưởng hiển thị đúng sau vài ngày nhập liệu thật liên tục.
+
+### Sprint 1.6 (S) — Bảo mật cơ bản
+
+- [ ] Face ID/Touch ID qua LocalAuthentication (mục 12.2).
+- [ ] Mã PIN dự phòng, tự động khóa.
+- [ ] Chế độ ẩn số dư (mục 12.3).
+- [ ] Che nội dung trong App Switcher.
+- [ ] Mã hóa cache SwiftData cục bộ.
+
+**Định nghĩa hoàn thành:** mở app phải qua Face ID/PIN; bật ẩn số dư thì mọi số tiền hiện `•••••••••`.
+
+### Sprint 1.7 (S) — QA tổng thể Phase 1
+
+- [ ] Kiểm thử toàn bộ tiêu chí nghiệm thu mục 22.1-22.4 (Tài sản, Chứng khoán, Vàng, Tiết kiệm).
+- [ ] Nhập dữ liệu thật của chính bạn cho cả 4 nhóm, đối chiếu thủ công (Excel/nhẩm tay) xem tổng tài sản có khớp không.
+- [ ] Xuất CSV cơ bản (mục 16.1).
+
+**Định nghĩa hoàn thành Phase 1:** dùng app thay thế hoàn toàn cách theo dõi tài sản hiện tại (Excel/trí nhớ) cho cả 4 nhóm, với giá nhập tay.
+
+---
+
+## 29.3. PHASE 2 — Tự động hóa giá thị trường (API BTMC + DNSE)
+
+> Ghi chú xuyên suốt: **giá phải được lấy qua Supabase Edge Function (cron job), không gọi thẳng từ app.** Lý do: (1) tránh mỗi lần mở app đều gọi API ngoài — cả hai API đều không công bố rate limit rõ ràng, gọi tập trung 1 nơi lịch sự hơn; (2) với DNSE, secret ký chữ ký **không được phép nhúng vào app** (xem Sprint 2.3); (3) nhiều thiết bị (Phase 4) cùng đọc 1 bảng snapshot chung thay vì mỗi máy tự gọi API riêng.
+
+### Sprint 2.1 (M) — Hạ tầng chung: Edge Function + bảng snapshot giá
+
+- [ ] Tạo bảng `price_snapshots` (mã tài sản/loại vàng, giá mua vào, giá bán ra, nguồn, thời gian) dùng chung cho cả vàng và chứng khoán.
+- [ ] Viết 1 Supabase Edge Function (Deno) khung sườn chạy theo lịch (Supabase Cron / `pg_cron`), có cấu trúc dễ thêm "provider" mới (BTMC, DNSE, sau này có thể thêm tỷ giá).
+- [ ] App: sửa logic lấy `currentPrice` của Asset — đọc từ `price_snapshots` (bản ghi mới nhất theo mã) thay vì chỉ dựa vào giá nhập tay; giữ nhập tay làm phương án dự phòng khi chưa có snapshot hoặc API lỗi.
+- [ ] UI: hiển thị "Nguồn dữ liệu / Thời gian cập nhật" cạnh mỗi giá tự động (theo mục 13.2).
+
+**Định nghĩa hoàn thành:** Edge Function chạy thủ công 1 lần, ghi được 1 dòng test vào `price_snapshots`, app đọc và hiển thị đúng.
+
+### Sprint 2.2 (S) — Tích hợp API giá vàng BTMC
+
+Thông tin kỹ thuật đã xác minh thực tế (không chỉ theo tài liệu):
+
+```text
+Endpoint: GET http://api.btmc.vn/api/BTMCAPI/getpricebtmc?key={API_KEY}
+Auth: chỉ cần key nhúng trong query string, không có OAuth/HMAC
+Response: JSON (dù trang tài liệu mô tả là XML — đã curl thực tế và xác nhận JSON)
+
+{
+  "DataList": {
+    "Data": [
+      {
+        "@row": "9",
+        "@n_9": "VÀNG MIẾNG SJC (Vàng SJC)",
+        "@k_9": "24k",
+        "@h_9": "999.9",
+        "@pb_9": "14500000",   // giá công ty MUA VÀO (khách bán ra) — dùng số này để định giá tài sản đang giữ, theo nguyên tắc mục 4.3.4
+        "@ps_9": "14990000",   // giá công ty BÁN RA (khách mua vào)
+        "@pt_9": "4120",       // chưa xác định rõ ý nghĩa — cần log lại vài ngày để xác minh trước khi dùng
+        "@d_9": "11/07/2026 08:58"
+      }
+    ]
+  }
+}
+```
+
+- [ ] Task khám phá: gọi thử endpoint 2-3 lần trong ngày, ghi log để xác nhận tần suất cập nhật thực tế (quan sát ban đầu: các batch cách nhau ~30 phút) và ý nghĩa trường `pt` trước khi code chính thức.
+- [ ] Viết provider `BTMCGoldPriceProvider` trong Edge Function: gọi API, parse JSON (chú ý field có suffix số `_1`, `_2`... thay đổi theo `row`, không cố định tên field).
+- [ ] **Ánh xạ tên sản phẩm BTMC → loại vàng nội bộ (mục 4.3.1)**, dựa trên dữ liệu thực tế đã lấy được:
+  - "VÀNG MIẾNG SJC (Vàng SJC)" → Vàng miếng SJC
+  - "NHẪN TRÒN TRƠN (Vàng Rồng Thăng Long)" → Vàng nhẫn 9999
+  - "VÀNG THƯƠNG HIỆU DOJI, PNJ, PHÚ QUÝ... (Vàng Đối Tác)" → Vàng miếng thương hiệu khác
+  - "TRANG SỨC VÀNG RỒNG THĂNG LONG..." → Vàng trang sức
+  - Các dòng "BẠC..." → ngoài phạm vi mục 4.3.1 hiện tại, để dành làm loại tài sản mới nếu sau này bạn có nắm giữ bạc.
+- [ ] Dùng `@pb_x` (giá mua vào) làm `currentPrice`, đúng nguyên tắc đã chốt ở mục 4.3.4.
+- [ ] Lên lịch chạy mỗi 30-60 phút (không cần realtime vì giá vàng SJC/BTMC vốn không đổi liên tục trong ngày).
+- [ ] Fallback: nếu Edge Function lỗi/API sập, Asset vàng vẫn dùng giá nhập tay gần nhất, không crash.
+
+**Định nghĩa hoàn thành:** mở app, tài sản Vàng đang có tự động hiện giá trị theo giá BTMC mới nhất, kèm nhãn nguồn + thời gian cập nhật.
+
+### Sprint 2.3 (L) — Tích hợp API DNSE (chứng khoán)
+
+Đây là sprint phức tạp nhất về mặt kỹ thuật trong Phase 2, vì DNSE dùng cơ chế ký chữ ký thay vì API key đơn giản như BTMC:
+
+```text
+Mỗi request REST cần 3 header: X-Api-Key, X-Signature, Date
+
+Cách tạo X-Signature:
+1. Chuỗi ký (signing string):
+   (request-target): [method] [path]
+   date: [RFC1123 date]
+   nonce: [UUID4 hex]
+2. HMAC-SHA256(chuỗi ký, API_SECRET) → Base64 → URL-encode riêng các ký tự + / =
+3. Header: Signature keyId="{API_KEY}",algorithm="hmac-sha256",
+   headers="(request-target) date",signature="{ENCODED}",nonce="{NONCE}"
+
+Ràng buộc: Date phải lệch hệ thống DNSE không quá ±1 phút; mỗi request 1 Date + Nonce mới.
+```
+
+- [ ] Lấy API Key + API Secret từ DNSE Developer Portal (đã có tài khoản DNSE nên làm được ngay).
+- [ ] **Quan trọng — bảo mật:** API Secret **chỉ được lưu trong Supabase Edge Function** (biến môi trường phía server), **tuyệt đối không nhúng vào app iOS** — vì secret dùng để ký request, lộ ra nguy hiểm hơn cả anon key/service_role key đã cảnh báo ở mục 28.4. App không bao giờ gọi thẳng DNSE.
+- [ ] Task khám phá riêng (làm trước khi viết code Swift/Deno): dùng Postman hoặc curl để xác nhận chính xác endpoint market-data lấy giá đóng cửa/giá khớp lệnh theo mã CK — tài liệu công khai của DNSE không liệt kê đầy đủ field, cần thử trực tiếp với API Key thật.
+- [ ] Xác nhận: chỉ cần API Key + Signature cho market data (đọc giá) — **không cần OTP/trading-token**, vì luồng OTP/trading-token (mục xác thực 2FA) chỉ bắt buộc cho đặt lệnh, ứng dụng này không đặt lệnh.
+- [ ] Viết hàm ký HMAC-SHA256 trong Edge Function (Deno có `crypto.subtle`, dùng được).
+- [ ] Viết provider `DNSEPriceProvider`: lấy danh sách mã CK đang có trong `assets` (nhóm Chứng khoán), gọi market data theo từng mã hoặc theo batch nếu API hỗ trợ.
+- [ ] Xử lý phiên giao dịch: HOSE/HNX/UPCOM chỉ giao dịch giờ hành chính có nghỉ trưa — không cần gọi API ngoài giờ, tránh log rác và nhầm lẫn "giá mới" khi thị trường đã đóng cửa.
+- [ ] UI: badge "Thị trường đang mở/đã đóng cửa" cạnh giá CK tự động.
+- [ ] Fallback về giá nhập tay nếu gọi API lỗi (mã sai, phiên hết hạn...).
+
+**Định nghĩa hoàn thành:** mã cổ phiếu thật bạn đang giữ tự động cập nhật giá trong giờ giao dịch, lãi/lỗ tính lại theo giá mới mà không cần bạn nhập tay.
+
+### Sprint 2.4 (S) — Hoàn thiện trải nghiệm giá tự động
+
+- [ ] Cảnh báo giá mục tiêu (mục 11.4): cổ phiếu vượt giá mục tiêu, vàng đạt giá mục tiêu — dùng Local Notifications dựa trên `price_snapshots` mới.
+- [ ] Nhắc cập nhật giá nếu Edge Function lỗi liên tục nhiều ngày (mục 11.2, thích ứng lại vì giờ là lỗi hệ thống chứ không phải quên nhập tay).
+- [ ] Widget iOS hiển thị tổng tài sản/tài sản ròng (mục 17.2).
+- [ ] (Tùy chọn) Nếu tìm được API tỷ giá phù hợp, thêm provider tỷ giá tự động vào Edge Function dùng chung — trước mắt tài khoản ngoại tệ (mục 4.1.5) dùng tỷ giá nhập tay.
+
+**Định nghĩa hoàn thành Phase 2:** không còn phải tự tay cập nhật giá vàng và giá cổ phiếu hàng ngày.
+
+---
+
+## 29.4. PHASE 3 — Mở rộng loại tài sản + báo cáo/nhắc nhở đầy đủ
+
+> Ngoại tệ không còn là sprint riêng ở đây — đã chuyển sang Phase 1 (Sprint 1.3/1.4) vì được xử lý ngay trong tài khoản Tiền mặt (mục 4.1.5).
+
+### Sprint 3.1 (M) — Nợ phải trả
+
+- [ ] CRUD nợ (mục 5), tính tài sản ròng = tổng tài sản - tổng nợ (mục 3.3) trên toàn bộ Dashboard.
+- [ ] Nhắc thanh toán nợ (mục 11.5).
+- [ ] Báo cáo nợ (mục 10, tỷ lệ nợ/tài sản, nợ/tài sản ròng).
+
+### Sprint 3.2 (M) — Bất động sản & tài sản khác
+
+- [ ] CRUD nhóm tài sản khác (mục 4.6): bất động sản, ô tô, trái phiếu, tiền điện tử...
+- [ ] Nhắc cập nhật giá bất động sản 90 ngày (mục 11.2).
+
+### Sprint 3.3 (M) — Báo cáo & nhắc nhở đầy đủ
+
+- [ ] Toàn bộ báo cáo mục 10 (tổng tài sản, lãi/lỗ, phân bổ, kỳ hạn, thu nhập thụ động).
+- [ ] Xuất PDF (mục 17.2).
+- [ ] Toàn bộ hệ thống nhắc nhở mục 11 còn thiếu (đáo hạn 30/14/7/1 ngày, cảnh báo tỷ trọng).
+
+**Định nghĩa hoàn thành Phase 3:** app phủ hết mục 4 (toàn bộ danh mục tài sản) và mục 10/11 (báo cáo/nhắc nhở), đúng "Phiên bản 2.0" ở mục 17.3.
+
+---
+
+## 29.5. PHASE 4 — Chia sẻ dữ liệu với người thân
+
+Theo mô hình no-auth đã chốt ở mục 28.3 — không cần đợi Phase 2/3 xong, có thể xen kẽ bất cứ lúc nào sau Phase 1.
+
+### Sprint 4.1 (S) — QA đồng bộ đa thiết bị
+
+- [ ] Cài build lên 1 thiết bị thứ hai, trỏ cùng Supabase project.
+- [ ] Test ghi đồng thời từ 2 máy — xác nhận cơ chế "tính lại số dư từ transaction log" (Sprint 1.2) xử lý đúng, không lệch số liệu.
+- [ ] Thêm cột `edited_by` (text) cho các bảng giao dịch chính — nhãn hiển thị tự chọn ("Chồng"/"Vợ"), không phải cơ chế xác thực (mục 28.3).
+- [ ] Cài đặt: cho phép người dùng đặt tên hiển thị của mình trong tab Cài đặt.
+
+### Sprint 4.2 (S) — Phân phối bản build
+
+- [ ] Quyết định: nâng cấp Apple Developer Program ($99/năm) nếu muốn dùng TestFlight để gửi build cho người thân (mục 27.4) — không bắt buộc nếu vẫn cài trực tiếp qua Xcode được.
+- [ ] Nếu dùng TestFlight: mời người thân qua email, build hết hạn 90 ngày cần renew định kỳ.
+
+### Sprint 4.3 (S) — Tinh chỉnh trải nghiệm dùng chung
+
+- [ ] Công tắc "chế độ chỉ xem" cục bộ (UI-only, không phải bảo mật thật — đúng đánh đổi đã ghi ở mục 28.3) cho thiết bị người thân nếu muốn hạn chế sửa nhầm.
+- [ ] Thông báo đẩy khi có giao dịch lớn được người khác thêm (tùy chọn).
+
+**Định nghĩa hoàn thành Phase 4:** người thân cài app trên điện thoại của họ, mở lên thấy đúng dữ liệu tài sản chung, không cần đăng nhập.
+
+---
+
+## 29.6. PHASE 5 — Thông minh hóa
+
+> Nên làm sau cùng — cần vài tháng dữ liệu lịch sử thật (từ `valuation_snapshots`) mới có gì để phân tích/tóm tắt có ý nghĩa.
+
+### Sprint 5.1 (M) — Báo cáo tóm tắt tự động bằng AI
+
+- [ ] Tích hợp gọi Claude API (Edge Function) tóm tắt biến động tài sản theo mẫu mục 18.1.
+- [ ] Disclaimer rõ ràng trong UI: AI chỉ tóm tắt/phân tích, không tư vấn đầu tư (mục 18.3, 26.5).
+
+### Sprint 5.2 (S) — Cảnh báo tập trung/thanh khoản
+
+- [ ] Cảnh báo tỷ trọng (mục 11.3): 1 mã CK/1 loại tài sản vượt ngưỡng % tổng tài sản.
+- [ ] Chỉ số tài sản thanh khoản có thể chuyển thành tiền ngay.
+
+### Sprint 5.3 (M) — Mô phỏng mục tiêu tài chính
+
+- [ ] Dự báo dòng tiền, mô phỏng "nếu cổ phiếu giảm X% thì tài sản ròng còn bao nhiêu" (câu hỏi mẫu mục 18.2).
+- [ ] Tái cân bằng danh mục gợi ý (chỉ hiển thị thông tin, không tự đặt lệnh — đúng mục 18.3).
+
+**Định nghĩa hoàn thành Phase 5:** đúng tinh thần "Phiên bản 3.0" mục 17.4.
+
+---
+
+## 29.7. Bảng theo dõi tiến độ nhanh
+
+| Phase | Sprint | Trạng thái |
+|---|---|---|
+| 1 | 1.1 Setup hạ tầng | Chưa bắt đầu |
+| 1 | 1.2 Data layer & Repository | Chưa bắt đầu |
+| 1 | 1.3 CRUD UI 4 nhóm tài sản | Chưa bắt đầu |
+| 1 | 1.4 Giao dịch & công thức tài chính | Chưa bắt đầu |
+| 1 | 1.5 Dashboard & biểu đồ | Chưa bắt đầu |
+| 1 | 1.6 Bảo mật cơ bản | Chưa bắt đầu |
+| 1 | 1.7 QA tổng thể Phase 1 | Chưa bắt đầu |
+| 2 | 2.1 Hạ tầng Edge Function & price_snapshots | Chưa bắt đầu |
+| 2 | 2.2 API giá vàng BTMC | Chưa bắt đầu |
+| 2 | 2.3 API DNSE chứng khoán | Chưa bắt đầu |
+| 2 | 2.4 Cảnh báo giá & widget | Chưa bắt đầu |
+| 3 | 3.1 Nợ phải trả | Chưa bắt đầu |
+| 3 | 3.2 Bất động sản & tài sản khác | Chưa bắt đầu |
+| 3 | 3.3 Báo cáo & nhắc nhở đầy đủ | Chưa bắt đầu |
+| 4 | 4.1 QA đồng bộ đa thiết bị | Chưa bắt đầu |
+| 4 | 4.2 Phân phối bản build | Chưa bắt đầu |
+| 4 | 4.3 Tinh chỉnh dùng chung | Chưa bắt đầu |
+| 5 | 5.1 AI tóm tắt | Chưa bắt đầu |
+| 5 | 5.2 Cảnh báo tập trung/thanh khoản | Chưa bắt đầu |
+| 5 | 5.3 Mô phỏng mục tiêu tài chính | Chưa bắt đầu |

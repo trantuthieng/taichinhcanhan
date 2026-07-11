@@ -1,0 +1,21 @@
+# Local secrets
+AssetTracker/AssetTracker/Config/Secrets.swift
+.env
+
+# Xcode
+DerivedData/
+.build_dd/
+*.xcresult
+*.xcuserstate
+xcuserdata/
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# Supabase
+supabase/.branches/
+supabase/.temp/
+
+# macOS
+.DS_Store
