@@ -1,5 +1,5 @@
 import { getSupabaseAdmin } from "../_shared/supabaseAdminClient.ts";
-const MODEL = Deno.env.get("ANTHROPIC_MODEL") ?? "claude-sonnet-4-20250514";
+const MODEL = Deno.env.get("ANTHROPIC_MODEL") ?? "claude-opus-4-8";
 const forbidden = [
   /\bnên\s+(mua|bán|đầu tư)/iu,
   /\b(khuyến nghị|hãy mua|hãy bán|mã nên)/iu,
@@ -57,7 +57,6 @@ if (import.meta.main) {
         body: JSON.stringify({
           model: MODEL,
           max_tokens: 350,
-          temperature: 0,
           system:
             "Chỉ tóm tắt số liệu đã cho. Không đưa lời khuyên hoặc khuyến nghị đầu tư.",
           messages: [{ role: "user", content: prompt }],
@@ -90,9 +89,12 @@ if (import.meta.main) {
       });
     } catch (error) {
       console.error("generate-ai-summary failed", error);
-      return Response.json({
-        error: error instanceof Error ? error.message : "Unknown error",
-      }, { status: 500 });
+      const message = error instanceof Error
+        ? error.message
+        : typeof error === "string"
+        ? error
+        : (error as { message?: string })?.message ?? JSON.stringify(error);
+      return Response.json({ error: message }, { status: 500 });
     }
   });
 }
