@@ -6,6 +6,8 @@ AssetTracker/AssetTracker/Config/Secrets.swift
 DerivedData/
 .build_dd/
 *.xcresult
+*.ipa
+Payload/
 *.xcuserstate
 xcuserdata/
 
