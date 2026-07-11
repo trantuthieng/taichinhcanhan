@@ -35,9 +35,9 @@ export function parseLatestTrade(
 
 if (import.meta.main) {
   Deno.serve(async () => {
-    if (!isVietnameseStockMarketOpen()) {
-      return Response.json({ inserted: 0, reason: "market_closed" });
-    }
+    // DNSE trả giá phiên khớp gần nhất bất kể giờ, nên vẫn lấy khi ngoài giờ
+    // giao dịch (giá đóng cửa phiên trước) — chỉ dùng giờ để gắn nhãn marketOpen.
+    const marketOpen = isVietnameseStockMarketOpen();
     try {
       const supabaseAdmin = getSupabaseAdmin();
       const { data: heldAssets, error: assetError } = await supabaseAdmin.from(
@@ -87,6 +87,7 @@ if (import.meta.main) {
       }
       return Response.json({
         inserted: snapshots.length,
+        marketOpen,
         failures: failures.map(({ symbol, status, error }) => ({
           symbol,
           status,
