@@ -9,6 +9,7 @@
 import { getSupabaseAdmin } from "../_shared/supabaseAdminClient.ts";
 import { signDnseRequest } from "../_shared/dnseSignature.ts";
 import { isVietnameseStockMarketOpen } from "../_shared/marketHours.ts";
+import { filterChangedSnapshots } from "../_shared/dedupe.ts";
 
 const DNSE_ORIGIN = "https://openapi.dnse.com.vn";
 const VND_QUOTE_MULTIPLIER = 1000;
@@ -79,14 +80,20 @@ if (import.meta.main) {
           });
         }
       }
-      if (snapshots.length) {
+      const changed = await filterChangedSnapshots(
+        supabaseAdmin,
+        "stock",
+        snapshots,
+      );
+      if (changed.length) {
         const { error } = await supabaseAdmin.from("price_snapshots").insert(
-          snapshots,
+          changed,
         );
         if (error) throw error;
       }
       return Response.json({
-        inserted: snapshots.length,
+        inserted: changed.length,
+        skipped: snapshots.length - changed.length,
         marketOpen,
         failures: failures.map(({ symbol, status, error }) => ({
           symbol,

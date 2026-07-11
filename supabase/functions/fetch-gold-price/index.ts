@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from "../_shared/supabaseAdminClient.ts";
+import { filterChangedSnapshots } from "../_shared/dedupe.ts";
 
 // Nguồn giá vàng: vang.today (HTTPS, miễn phí, không cần key, sau Cloudflare nên
 // gọi được từ Supabase Edge — khác api.btmc.vn chặn IP nước ngoài).
@@ -65,11 +66,16 @@ if (import.meta.main) {
           warning: "No mapped gold products",
         });
       }
-      const { error } = await getSupabaseAdmin().from("price_snapshots").insert(
-        snapshots,
-      );
-      if (error) throw error;
-      return Response.json({ inserted: snapshots.length });
+      const admin = getSupabaseAdmin();
+      const changed = await filterChangedSnapshots(admin, "gold", snapshots);
+      if (changed.length) {
+        const { error } = await admin.from("price_snapshots").insert(changed);
+        if (error) throw error;
+      }
+      return Response.json({
+        inserted: changed.length,
+        skipped: snapshots.length - changed.length,
+      });
     } catch (error) {
       console.error("fetch-gold-price failed", error);
       return Response.json({

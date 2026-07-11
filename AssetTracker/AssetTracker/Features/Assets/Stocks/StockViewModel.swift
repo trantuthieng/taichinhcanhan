@@ -12,6 +12,7 @@ final class StockViewModel {
   var marketPrices: [UUID: MarketPriceDisplay] = [:]
 
   func load() async {
+    await PriceRefreshService.refreshIfNeeded()
     do {
       async let allAssets = assets.fetchAll()
       async let allAccounts = accountsRepository.fetchAll()

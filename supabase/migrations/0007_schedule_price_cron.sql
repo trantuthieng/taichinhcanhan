@@ -1,35 +1,13 @@
--- Lên lịch tự động lấy giá qua pg_cron + pg_net.
--- Hai function giữ verify_jwt = true; cron gắn bearer token là anon key,
--- lấy từ Vault (secret 'cron_anon_key') nên file migration không chứa key.
-create extension if not exists pg_cron;
-create extension if not exists pg_net;
-
--- Vàng: vang.today làm mới ~5 phút; kéo mỗi 30 phút, cả ngày.
-select cron.schedule(
-  'fetch-gold-price',
-  '*/30 * * * *',
-  $$select net.http_post(
-      url := 'https://hiekanuqptblnuficpra.supabase.co/functions/v1/fetch-gold-price',
-      headers := jsonb_build_object(
-        'Content-Type', 'application/json',
-        'Authorization', 'Bearer ' ||
-          (select decrypted_secret from vault.decrypted_secrets where name = 'cron_anon_key')
-      ),
-      body := '{}'::jsonb
-  );$$
-);
-
--- Chứng khoán: mỗi 10 phút; function tự trả về sớm ngoài giờ HOSE/HNX/UPCOM.
-select cron.schedule(
-  'fetch-stock-price',
-  '*/10 * * * *',
-  $$select net.http_post(
-      url := 'https://hiekanuqptblnuficpra.supabase.co/functions/v1/fetch-stock-price',
-      headers := jsonb_build_object(
-        'Content-Type', 'application/json',
-        'Authorization', 'Bearer ' ||
-          (select decrypted_secret from vault.decrypted_secrets where name = 'cron_anon_key')
-      ),
-      body := '{}'::jsonb
-  );$$
-);
+-- Giá thị trường được lấy theo cơ chế APP-TRIGGERED, không dùng cron chạy nền:
+--   • App (PriceRefreshService) gọi Edge Function fetch-gold-price / fetch-stock-price
+--     mỗi khi mở app / resume, có throttle 2 phút.
+--   • Edge Function dùng filterChangedSnapshots (_shared/dedupe.ts) — chỉ ghi vào
+--     price_snapshots khi giá đổi, nên không phát sinh dòng trùng.
+-- => Server nhẹ (không chạy nền), app vẫn có giá mới mỗi lần mở.
+--
+-- Bản đầu của migration này từng lên lịch pg_cron gọi 2 function; đã gỡ lịch
+-- (cron.unschedule) khi chuyển sang app-triggered. File giữ nguyên số hiệu 0007
+-- để lịch sử migration không lệch; cố ý không tạo cron job nào.
+--
+-- Nếu sau này muốn có nền dự phòng (vd chạy vài lần/ngày cho widget khi không mở
+-- app), bật lại pg_cron + pg_net và cron.schedule ở một migration mới.

@@ -8,6 +8,7 @@ import Observation
   var errorMessage: String?
   var marketPrices: [UUID: MarketPriceDisplay] = [:]
   func load() async {
+    await PriceRefreshService.refreshIfNeeded()
     do {
       items = try await repository.fetchAll().filter { Self.categories.contains($0.category) }
       for item in items {

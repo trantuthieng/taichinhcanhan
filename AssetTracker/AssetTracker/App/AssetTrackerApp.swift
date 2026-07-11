@@ -7,6 +7,7 @@ struct AssetTrackerApp: App {
     WindowGroup {
       AppRootView(auth: auth)
         .task {
+          await PriceRefreshService.refreshIfNeeded()
           await PriceAlertService.shared.requestAuthorization()
           if let liabilities = try? await LiabilityRepository().fetchAll() {
             await ReminderScheduler.shared.refreshLiabilities(liabilities)
@@ -43,7 +44,9 @@ private struct AppRootView: View {
     }
     .onChange(of: scenePhase) { _, phase in
       switch phase {
-      case .active: shieldsContent = false
+      case .active:
+        shieldsContent = false
+        Task { await PriceRefreshService.refreshIfNeeded() }
       case .inactive: shieldsContent = true
       case .background:
         shieldsContent = true
