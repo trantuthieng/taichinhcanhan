@@ -176,6 +176,34 @@ async function supabaseRequest(table, { method = "GET", query = "", body, prefer
   return data;
 }
 
+function estimatedMonthlyDebtPayment(liability, priorRepayments = 0) {
+  const balance = Number(liability.current_balance || 0);
+  if (balance <= 0) return 0;
+  const savedPayment = Number(liability.monthly_payment || 0);
+  if (savedPayment > 0) return savedPayment;
+
+  if (liability.liability_type === "credit_card") {
+    return Math.min(balance, Math.max(
+      balance * Number(liability.min_payment_rate || 0) / 100,
+      Number(liability.min_payment_fixed_amount || 0),
+    ));
+  }
+
+  const months = Number(liability.term_in_months || 0);
+  if (months <= 0 || priorRepayments >= months) return 0;
+  const originalPrincipal = Number(liability.original_principal || balance);
+  const monthlyRate = Number(liability.annual_interest_rate || 0) / 100 / 12;
+  if (liability.repayment_method === "equal_principal") {
+    const principalPerPeriod = originalPrincipal / months;
+    const remainingBeforePayment = Math.max(0, originalPrincipal - principalPerPeriod * priorRepayments);
+    const principalDue = priorRepayments === months - 1 ? remainingBeforePayment : principalPerPeriod;
+    return principalDue + remainingBeforePayment * monthlyRate;
+  }
+  if (monthlyRate === 0) return originalPrincipal / months;
+  const growth = Math.pow(1 + monthlyRate, months);
+  return originalPrincipal * monthlyRate * growth / (growth - 1);
+}
+
 app.use("/api/data", requireAuth, (req, res, next) => {
   if (!sameOrigin(req)) return res.status(403).json({ error: "Yêu cầu không hợp lệ." });
   next();
@@ -190,13 +218,14 @@ app.get("/api/data/summary", async (_req, res, next) => {
         throw error;
       }
     };
-    const [accounts, assets, savings, liabilities, incomes, payables] = await Promise.all([
+    const [accounts, assets, savings, liabilities, incomes, payables, repayments] = await Promise.all([
       supabaseRequest("asset_accounts", { query: "?select=id,balance,currency,current_exchange_rate,is_included_in_net_worth" }),
       supabaseRequest("assets", { query: "?select=id,category,quantity,current_price,currency" }),
       supabaseRequest("savings_deposits", { query: "?select=id,principal,currency,status" }),
-      supabaseRequest("liabilities", { query: "?select=id,current_balance,currency" }),
+      supabaseRequest("liabilities", { query: "?select=id,name,liability_type,original_principal,current_balance,currency,annual_interest_rate,start_date,next_payment_date,monthly_payment,repayment_method,term_in_months,min_payment_rate,min_payment_fixed_amount" }),
       supabaseRequest("recurring_incomes", { query: "?select=id,monthly_amount,is_active" }),
-      optionalTable("monthly_payables", { query: "?select=id,name,category,monthly_amount,currency,due_day,is_active,is_auto_pay&order=due_day.asc" }),
+      optionalTable("monthly_payables", { query: "?select=id,name,category,monthly_amount,currency,due_day,is_active,is_auto_pay,liability_id&order=due_day.asc" }),
+      supabaseRequest("asset_transactions", { query: "?select=liability_id&type=eq.repayment" }),
     ]);
     const inVnd = (amount, currency, rate) => Number(amount || 0) * (currency === "VND" ? 1 : Number(rate || 1));
     const accountValue = accounts.filter((x) => x.is_included_in_net_worth).reduce((sum, x) => sum + inVnd(x.balance, x.currency, x.current_exchange_rate), 0);
@@ -205,7 +234,18 @@ app.get("/api/data/summary", async (_req, res, next) => {
     const debt = liabilities.reduce((sum, x) => sum + inVnd(x.current_balance, x.currency), 0);
     const monthlyIncome = incomes.filter((x) => x.is_active).reduce((sum, x) => sum + Number(x.monthly_amount || 0), 0);
     const activePayables = payables.filter((x) => x.is_active);
-    const monthlyPayables = activePayables.reduce((sum, x) => sum + inVnd(x.monthly_amount, x.currency), 0);
+    const linkedLiabilityIDs = new Set(activePayables.map((x) => x.liability_id).filter(Boolean));
+    const repaymentCounts = repayments.reduce((counts, item) => {
+      if (item.liability_id) counts.set(item.liability_id, (counts.get(item.liability_id) || 0) + 1);
+      return counts;
+    }, new Map());
+    const automaticDebtPayables = liabilities
+      .filter((x) => !linkedLiabilityIDs.has(x.id))
+      .map((x) => ({ ...x, estimated_payment: estimatedMonthlyDebtPayment(x, repaymentCounts.get(x.id) || 0) }))
+      .filter((x) => x.estimated_payment > 0);
+    const monthlyRecurringPayables = activePayables.reduce((sum, x) => sum + inVnd(x.monthly_amount, x.currency), 0);
+    const monthlyDebtPayments = automaticDebtPayables.reduce((sum, x) => sum + inVnd(x.estimated_payment, x.currency), 0);
+    const monthlyPayables = monthlyRecurringPayables + monthlyDebtPayments;
     const totalAssets = accountValue + assetValue + savingsValue;
     const monthlyCashFlow = monthlyIncome - monthlyPayables;
     res.json({
@@ -214,11 +254,22 @@ app.get("/api/data/summary", async (_req, res, next) => {
       netWorth: totalAssets - debt,
       monthlyIncome,
       monthlyPayables,
+      monthlyRecurringPayables,
+      monthlyDebtPayments,
       monthlyCashFlow,
       savingsRate: monthlyIncome > 0 ? monthlyCashFlow / monthlyIncome * 100 : 0,
       debtToAssets: totalAssets > 0 ? debt / totalAssets * 100 : 0,
       allocation: { accounts: accountValue, investments: assetValue, savings: savingsValue },
-      upcomingPayables: activePayables.sort((a, b) => {
+      upcomingPayables: activePayables.concat(automaticDebtPayables.map((x) => ({
+        id: `debt-${x.id}`,
+        name: x.name,
+        category: x.liability_type === "credit_card" ? "credit_card" : "loan_payment",
+        monthly_amount: x.estimated_payment,
+        currency: x.currency,
+        due_day: x.next_payment_date ? new Date(`${x.next_payment_date}T00:00:00Z`).getUTCDate() : 1,
+        is_auto_pay: true,
+        source: "liability",
+      }))).sort((a, b) => {
         const today = new Date().getDate();
         return ((a.due_day - today + 31) % 31) - ((b.due_day - today + 31) % 31);
       }).slice(0, 6),

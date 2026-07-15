@@ -146,16 +146,18 @@ async function renderDashboard() {
         <div class="quick-stat"><span>Tỷ lệ tiết kiệm</span><strong class="${data.savingsRate >= 20 ? "good" : "warn"}">${data.savingsRate.toFixed(1)}%</strong></div>
         <div class="quick-stat"><span>Tỷ lệ nợ / tài sản</span><strong class="${data.debtToAssets <= 50 ? "good" : "warn"}">${data.debtToAssets.toFixed(1)}%</strong></div>
         <div class="quick-stat"><span>Phải trả / thu nhập</span><strong>${data.monthlyIncome ? (data.monthlyPayables / data.monthlyIncome * 100).toFixed(1) : "0.0"}%</strong></div>
+        <div class="quick-stat"><span>Trả nợ & trả góp / tháng</span><strong>${money(data.monthlyDebtPayments)}</strong></div>
         <div class="quick-stat"><span>Trạng thái dòng tiền</span><strong class="${cashFlowPositive ? "good" : "bad"}">${cashFlowPositive ? "Dương" : "Âm"}</strong></div>
       </div></article>
       <article class="panel cash-flow-panel"><div class="panel-header"><h3>Dòng tiền hàng tháng</h3><span class="muted">Thu nhập định kỳ và khoản phải trả</span></div>
         <div class="cash-flow-visual">
           <div><span>Tiền vào</span><strong>${money(data.monthlyIncome)}</strong><i class="income" style="width:100%"></i></div>
-          <div><span>Tiền ra</span><strong>${money(data.monthlyPayables)}</strong><i class="expense" style="width:${data.monthlyIncome ? Math.min(data.monthlyPayables / data.monthlyIncome * 100, 100) : (data.monthlyPayables ? 100 : 0)}%"></i></div>
+          <div><span>Trả nợ</span><strong>${money(data.monthlyDebtPayments)}</strong><i class="debt" style="width:${data.monthlyIncome ? Math.min(data.monthlyDebtPayments / data.monthlyIncome * 100, 100) : (data.monthlyDebtPayments ? 100 : 0)}%"></i></div>
+          <div><span>Chi định kỳ</span><strong>${money(data.monthlyRecurringPayables)}</strong><i class="expense" style="width:${data.monthlyIncome ? Math.min(data.monthlyRecurringPayables / data.monthlyIncome * 100, 100) : (data.monthlyRecurringPayables ? 100 : 0)}%"></i></div>
         </div>
       </article>
       <article class="panel"><div class="panel-header"><h3>Sắp đến hạn hàng tháng</h3><button class="secondary-button" data-page="monthly_payables">Quản lý</button></div>
-        <div class="due-list">${data.upcomingPayables.length ? data.upcomingPayables.map((item) => `<div class="due-item"><span class="due-day">${item.due_day}</span><div><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(optionLabel("payableCategory", item.category))}${item.is_auto_pay ? " · Tự động" : ""}</small></div><b>${money(item.monthly_amount, item.currency)}</b></div>`).join("") : '<div class="empty-compact">Chưa có khoản phải trả định kỳ.</div>'}</div>
+        <div class="due-list">${data.upcomingPayables.length ? data.upcomingPayables.map((item) => `<div class="due-item"><span class="due-day">${item.due_day}</span><div><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(optionLabel("payableCategory", item.category))}${item.source === "liability" ? " · Tự động từ khoản nợ" : item.is_auto_pay ? " · Thanh toán tự động" : ""}</small></div><b>${money(item.monthly_amount, item.currency)}</b></div>`).join("") : '<div class="empty-compact">Chưa có khoản phải trả định kỳ.</div>'}</div>
       </article>
     </section>`;
 }

@@ -54,6 +54,7 @@ Thêm biến môi trường `ADMIN_PASSWORD_HASH` trên Render với kết quả
 - Dashboard tổng tài sản, dư nợ, tài sản ròng và thu nhập tháng.
 - Theo dõi khoản phải trả hàng tháng: lãi/vay, tiền thuê nhà, thẻ tín dụng, hóa đơn, bảo hiểm và các khoản khác.
 - Thống kê dòng tiền vào–ra, dòng tiền ròng, tỷ lệ tiết kiệm, tỷ lệ nợ/tài sản và lịch đến hạn.
+- Tự động lấy số trả hàng tháng từ khoản vay, trả góp và thẻ tín dụng vào dòng tiền ra; ưu tiên số `monthly_payment` đã lưu và tự ước tính khi còn thiếu.
 - Thêm/sửa/xóa tài khoản tiền, tài sản, sổ tiết kiệm, nợ, thu nhập định kỳ và giao dịch.
 - Phiên đăng nhập ký HMAC, cookie `HttpOnly`, `SameSite=Strict`, tự hết hạn sau 12 giờ.
 - Giới hạn thử sai mật khẩu và kiểm tra same-origin cho các request thay đổi dữ liệu.

@@ -87,6 +87,7 @@ textarea { min-height: 86px; resize: vertical; }
 .cash-flow-visual strong { color: var(--navy); text-align: right; }
 .cash-flow-visual i { grid-column: 1 / -1; display: block; min-width: 3px; height: 10px; border-radius: 99px; }
 .cash-flow-visual .income { background: var(--mint); }
+.cash-flow-visual .debt { background: #d1a244; }
 .cash-flow-visual .expense { background: #d98287; }
 .due-list { display: grid; }
 .due-item { display: grid; grid-template-columns: 38px 1fr auto; align-items: center; gap: 11px; padding: 11px 0; border-bottom: 1px solid var(--line); }
