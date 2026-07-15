@@ -44,7 +44,12 @@ if (import.meta.main) {
       const { data: heldAssets, error: assetError } = await supabaseAdmin.from(
         "assets",
       )
-        .select("symbol").eq("category", "stock").not("symbol", "is", null);
+        .select("symbol").in("category", [
+          "stock",
+          "etf",
+          "listed_bond",
+          "warrant",
+        ]).not("symbol", "is", null);
       if (assetError) {
         throw assetError;
       }
@@ -55,9 +60,9 @@ if (import.meta.main) {
           ).filter(Boolean),
         ),
       ];
-      const snapshots = [];
+      const snapshots: NonNullable<ReturnType<typeof parseLatestTrade>>[] = [];
       const failures: { symbol: string; status?: number; error: string }[] = [];
-      for (const symbol of symbols) {
+      await Promise.all(symbols.map(async (symbol) => {
         const path = `/price/${encodeURIComponent(symbol)}/trades/latest`;
         try {
           const headers = await signDnseRequest("GET", path);
@@ -68,7 +73,7 @@ if (import.meta.main) {
               status: response.status,
               error: await response.text(),
             });
-            continue;
+            return;
           }
           const snapshot = parseLatestTrade(await response.json(), symbol);
           if (snapshot) snapshots.push(snapshot);
@@ -79,7 +84,7 @@ if (import.meta.main) {
             error: error instanceof Error ? error.message : "Unknown error",
           });
         }
-      }
+      }));
       const changed = await filterChangedSnapshots(
         supabaseAdmin,
         "stock",

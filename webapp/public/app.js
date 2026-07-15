@@ -4,12 +4,24 @@ const state = { user: null, page: "dashboard", records: [], editing: null };
 const options = {
   currency: [["VND", "VND"], ["USD", "USD"], ["EUR", "EUR"], ["JPY", "JPY"], ["AUD", "AUD"], ["SGD", "SGD"]],
   accountType: [["cash_personal", "Tiền mặt cá nhân"], ["cash_family", "Tiền mặt gia đình"], ["bank_account", "Tài khoản ngân hàng"], ["salary_account", "Tài khoản nhận lương"], ["spending_account", "Tài khoản chi tiêu"], ["e_wallet", "Ví điện tử"], ["emergency_fund", "Quỹ khẩn cấp"], ["investment_fund", "Quỹ đầu tư"], ["foreign_currency_cash", "Tiền mặt ngoại tệ"]],
-  assetCategory: [["stock", "Cổ phiếu"], ["fund_certificate", "Chứng chỉ quỹ"], ["etf", "Quỹ ETF"], ["listed_bond", "Trái phiếu niêm yết"], ["foreign_stock", "Cổ phiếu nước ngoài"], ["gold_bar_sjc", "Vàng miếng SJC"], ["gold_ring_9999", "Vàng nhẫn 9999"], ["gold_jewelry", "Vàng trang sức"], ["real_estate", "Bất động sản"], ["car", "Ô tô"], ["motorbike", "Xe máy"], ["crypto", "Tiền mã hóa"], ["business_equity", "Vốn góp kinh doanh"], ["other_security", "Tài sản khác"]],
+  assetCategory: [["real_estate", "Bất động sản"], ["rental_asset", "Bất động sản cho thuê"], ["stock", "Cổ phiếu"], ["etf", "Quỹ ETF niêm yết"], ["listed_bond", "Trái phiếu niêm yết"], ["warrant", "Chứng quyền"], ["foreign_stock", "Cổ phiếu nước ngoài"], ["other_security", "Chứng khoán khác"], ["gold_bar_sjc", "Vàng miếng SJC"], ["gold_ring_9999", "Vàng nhẫn 9999"], ["gold_bar_other_brand", "Vàng miếng thương hiệu khác"], ["gold_jewelry", "Vàng trang sức"], ["gold_24k", "Vàng 24K"], ["gold_18k", "Vàng 18K"], ["gold_14k", "Vàng 14K"], ["gold_international", "Vàng quốc tế"], ["other_gold", "Vàng khác"], ["fund_certificate", "Chứng chỉ quỹ"], ["open_end_fund", "Quỹ mở"]],
+  realEstateCategory: [["real_estate", "Bất động sản"], ["rental_asset", "Bất động sản cho thuê"]],
+  securitiesCategory: [["stock", "Cổ phiếu"], ["etf", "Quỹ ETF niêm yết"], ["listed_bond", "Trái phiếu niêm yết"], ["warrant", "Chứng quyền"], ["foreign_stock", "Cổ phiếu nước ngoài"], ["other_security", "Chứng khoán khác"]],
+  goldCategory: [["gold_bar_sjc", "Vàng miếng SJC"], ["gold_ring_9999", "Vàng nhẫn 9999"], ["gold_bar_other_brand", "Vàng miếng thương hiệu khác"], ["gold_jewelry", "Vàng trang sức"], ["gold_24k", "Vàng 24K"], ["gold_18k", "Vàng 18K"], ["gold_14k", "Vàng 14K"], ["gold_international", "Vàng quốc tế"], ["other_gold", "Vàng khác"]],
+  fundCategory: [["fund_certificate", "Chứng chỉ quỹ"], ["open_end_fund", "Quỹ mở"]],
   unit: [["share", "Cổ phiếu / CCQ"], ["luong", "Lượng"], ["cay", "Cây"], ["chi", "Chỉ"], ["phan", "Phân"], ["gram", "Gram"], ["ounce", "Ounce"], ["item", "Tài sản"]],
   liabilityType: [["mortgage_loan", "Vay mua nhà"], ["car_loan", "Vay mua xe"], ["consumer_loan", "Vay tiêu dùng"], ["unsecured_loan", "Vay tín chấp"], ["family_loan", "Vay người thân"], ["installment_plan", "Trả góp"], ["credit_card", "Thẻ tín dụng"], ["other_payable", "Khoản phải trả khác"]],
   transactionType: [["deposit", "Nạp tiền"], ["withdrawal", "Rút tiền"], ["transfer", "Chuyển tiền"], ["buy", "Mua"], ["sell", "Bán"], ["interest", "Tiền lãi"], ["dividend", "Cổ tức"], ["maturity", "Tất toán"], ["repayment", "Trả nợ"], ["fee", "Phí"], ["tax", "Thuế"], ["adjustment", "Điều chỉnh"]],
   payableCategory: [["loan_interest", "Lãi vay"], ["loan_payment", "Khoản trả vay"], ["rent", "Tiền thuê nhà"], ["credit_card", "Thẻ tín dụng"], ["utilities", "Điện, nước, internet"], ["insurance", "Bảo hiểm"], ["tax", "Thuế, phí"], ["family", "Chi phí gia đình"], ["subscription", "Dịch vụ đăng ký"], ["other", "Khoản khác"]],
 };
+
+const assetColumns = [["name", "Tên"], ["category", "Phân loại", "assetCategory"], ["symbol", "Mã"], ["quantity", "Số lượng", "number"], ["current_price", "Giá hiện tại", "money"], ["valuation_date", "Cập nhật giá", "valuation"]];
+function assetFields(categorySource, defaultCategory) {
+  return [["name", "Tên tài sản", "text", true], ["category", "Phân loại", "select", true, categorySource, defaultCategory], ["symbol", "Mã / ký hiệu"], ["brand", "Thương hiệu"], ["unit", "Đơn vị", "select", true, "unit", "item"], ["quantity", "Số lượng", "number", true, null, 1], ["average_cost", "Giá vốn bình quân", "number", true, null, 0], ["current_price", "Giá hiện tại", "number", true, null, 0], ["currency", "Tiền tệ", "select", true, "currency", "VND"], ["acquisition_date", "Ngày mua", "date"], ["valuation_date", "Ngày cập nhật giá", "date", true], ["valuation_source", "Nguồn định giá"], ["target_price", "Giá mục tiêu", "number"], ["note", "Ghi chú", "textarea"]];
+}
+function assetPage(label, icon, title, eyebrow, singular, categories, categorySource, refreshMarket = false) {
+  return { label, icon, title, eyebrow, singular, table: "assets", categories, refreshMarket, columns: assetColumns, fields: assetFields(categorySource, categories[0]) };
+}
 
 const pages = {
   dashboard: { label: "Tổng quan", icon: "⌂", title: "Bức tranh tài chính", eyebrow: "TỔNG QUAN" },
@@ -18,11 +30,10 @@ const pages = {
     columns: [["name", "Tên"], ["institution", "Nơi quản lý"], ["account_type", "Loại", "accountType"], ["balance", "Số dư", "money"], ["currency", "Tiền tệ"]],
     fields: [["name", "Tên tài khoản", "text", true], ["institution", "Ngân hàng / nơi quản lý"], ["account_type", "Loại tài khoản", "select", true, "accountType"], ["currency", "Tiền tệ", "select", true, "currency", "VND"], ["balance", "Số dư", "number", true, null, 0], ["current_exchange_rate", "Tỷ giá hiện tại", "number"], ["is_included_in_net_worth", "Tính vào tài sản ròng", "checkbox", false, null, true], ["target_group", "Nhóm mục tiêu"], ["note", "Ghi chú", "textarea"]],
   },
-  assets: {
-    label: "Tài sản", icon: "◆", title: "Danh mục tài sản", eyebrow: "ĐẦU TƯ & TÀI SẢN", singular: "tài sản",
-    columns: [["name", "Tên"], ["category", "Phân loại", "assetCategory"], ["symbol", "Mã"], ["quantity", "Số lượng", "number"], ["current_price", "Giá hiện tại", "money"], ["currency", "Tiền tệ"]],
-    fields: [["name", "Tên tài sản", "text", true], ["category", "Phân loại", "select", true, "assetCategory"], ["symbol", "Mã / ký hiệu"], ["brand", "Thương hiệu"], ["unit", "Đơn vị", "select", true, "unit", "item"], ["quantity", "Số lượng", "number", true, null, 1], ["average_cost", "Giá vốn bình quân", "number", true, null, 0], ["current_price", "Giá hiện tại", "number", true, null, 0], ["currency", "Tiền tệ", "select", true, "currency", "VND"], ["acquisition_date", "Ngày mua", "date"], ["valuation_source", "Nguồn định giá"], ["target_price", "Giá mục tiêu", "number"], ["note", "Ghi chú", "textarea"]],
-  },
+  real_estate: assetPage("Bất động sản", "⌂", "Danh mục bất động sản", "TÀI SẢN", "bất động sản", ["real_estate", "rental_asset"], "realEstateCategory"),
+  securities: assetPage("Chứng khoán", "↗", "Danh mục chứng khoán", "ĐẦU TƯ", "mã chứng khoán", ["stock", "etf", "listed_bond", "warrant", "foreign_stock", "other_security"], "securitiesCategory", true),
+  gold: assetPage("Vàng", "◇", "Danh mục vàng", "TÀI SẢN PHÒNG THỦ", "khoản vàng", ["gold_bar_sjc", "gold_ring_9999", "gold_bar_other_brand", "gold_jewelry", "gold_24k", "gold_18k", "gold_14k", "gold_international", "other_gold"], "goldCategory", true),
+  funds: assetPage("Quỹ", "◫", "Danh mục quỹ", "ĐẦU TƯ QUỸ", "khoản đầu tư quỹ", ["fund_certificate", "open_end_fund"], "fundCategory", true),
   savings_deposits: {
     label: "Tiết kiệm", icon: "◉", title: "Sổ tiết kiệm", eyebrow: "TIỀN GỬI", singular: "sổ tiết kiệm",
     columns: [["name", "Tên sổ"], ["principal", "Tiền gốc", "money"], ["current_interest", "Lãi hiện tại", "money"], ["annual_interest_rate", "Lãi suất/năm", "percent"], ["term_in_days", "Kỳ hạn", "termDays"], ["progress_days", "Tiến độ", "progress"], ["maturity_date", "Ngày đáo hạn", "date"], ["contract_number", "Số tài khoản"]],
@@ -83,6 +94,10 @@ function formatCell(record, [key, _label, format]) {
   if (format === "progress") return `${new Intl.NumberFormat("vi-VN").format(Number(value))}/${new Intl.NumberFormat("vi-VN").format(Number(record.term_in_days || 0))} ngày`;
   if (format === "date") return new Intl.DateTimeFormat("vi-VN").format(new Date(`${value}T00:00:00`));
   if (format === "datetime") return new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" }).format(new Date(value));
+  if (format === "valuation") {
+    const date = new Intl.DateTimeFormat("vi-VN").format(new Date(value));
+    return `${date} · ${record.price_source || "Nhập tay"}${record.price_is_stale ? " · Cần cập nhật" : ""}`;
+  }
   if (format === "boolean") return value ? "Đang bật" : "Đã tắt";
   if (format) return optionLabel(format, value);
   return value;
@@ -118,7 +133,8 @@ async function navigate(pageKey) {
   $("#content").innerHTML = '<div class="loading">Đang tải dữ liệu…</div>';
   try {
     if (pageKey === "dashboard") return await renderDashboard();
-    state.records = await api(`/api/data/${pageKey}`);
+    state.records = await api(`/api/data/${page.table || pageKey}`);
+    if (page.categories) state.records = state.records.filter((record) => page.categories.includes(record.category));
     renderTable();
   } catch (error) { renderError(error); }
 }
@@ -132,6 +148,7 @@ async function renderDashboard() {
   const allocationTotal = allocation.reduce((sum, [, value]) => sum + value, 0) || 1;
   const cashFlowPositive = data.monthlyCashFlow >= 0;
   $("#content").innerHTML = `
+    ${data.staleAssetCount ? `<div class="freshness-alert"><strong>${data.staleAssetCount} tài sản chưa có giá cập nhật hôm nay.</strong><span>Giá thị trường được tự động lấy khi có nguồn; bất động sản cần cập nhật định giá thủ công.</span></div>` : `<div class="freshness-alert fresh"><strong>Dữ liệu giá đã cập nhật đến hôm nay.</strong><span>Thời điểm báo cáo: ${new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" }).format(new Date(data.asOfDate))}</span></div>`}
     <section class="summary-grid">
       <article class="summary-card accent"><span>TÀI SẢN RÒNG</span><strong>${money(data.netWorth)}</strong></article>
       <article class="summary-card"><span>TỔNG TÀI SẢN</span><strong>${money(data.totalAssets)}</strong></article>
@@ -161,6 +178,11 @@ async function renderDashboard() {
       <article class="panel"><div class="panel-header"><h3>Sắp đến hạn hàng tháng</h3><button class="secondary-button" data-page="monthly_payables">Quản lý</button></div>
         <div class="due-list">${data.upcomingPayables.length ? data.upcomingPayables.map((item) => `<div class="due-item"><span class="due-day">${item.due_day}</span><div><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(optionLabel("payableCategory", item.category))}${item.source === "liability" ? " · Tự động từ khoản nợ" : item.is_auto_pay ? " · Thanh toán tự động" : ""}</small></div><b>${money(item.monthly_amount, item.currency)}</b></div>`).join("") : '<div class="empty-compact">Chưa có khoản phải trả định kỳ.</div>'}</div>
       </article>
+    </section>
+    <section class="panel ai-panel">
+      <div class="panel-header"><div><p class="eyebrow">CLAUDE AI</p><h3>Phân tích & chiến lược tài chính</h3></div><button class="primary-button" data-ai-analysis>Phân tích ngay</button></div>
+      <div id="aiAnalysis" class="ai-analysis"><strong>Nhận đánh giá dựa trên số liệu hiện tại</strong><span>Claude sẽ phân tích dòng tiền, nợ, thanh khoản, cơ cấu tài sản và đề xuất thứ tự hành động.</span></div>
+      <p class="ai-disclaimer">Phân tích AI chỉ mang tính tham khảo, không thay thế tư vấn tài chính chuyên nghiệp.</p>
     </section>`;
 }
 
@@ -168,7 +190,7 @@ function renderTable() {
   const page = pages[state.page];
   const rows = state.records.map((record) => `<tr>${page.columns.map((column) => `<td>${escapeHtml(formatCell(record, column))}</td>`).join("")}<td><div class="actions"><button data-edit="${record.id}" title="Sửa">✎</button><button class="delete" data-delete="${record.id}" title="Xóa">⌫</button></div></td></tr>`).join("");
   $("#content").innerHTML = `
-    <div class="section-header"><div><h3>${state.records.length} ${page.singular}</h3><span class="muted">Dữ liệu đồng bộ với ứng dụng iPhone</span></div><button id="addButton" class="primary-button">+ Thêm ${page.singular}</button></div>
+    <div class="section-header"><div><h3>${state.records.length} ${page.singular}</h3><span class="muted">Dữ liệu đồng bộ với ứng dụng iPhone${page.table === "assets" ? " · Giá trị theo ngày cập nhật hiển thị" : ""}</span></div><div class="header-actions">${page.refreshMarket ? '<button class="secondary-button" data-refresh-market>↻ Cập nhật giá hôm nay</button>' : ""}<button id="addButton" class="primary-button">+ Thêm ${page.singular}</button></div></div>
     <div class="table-wrap">${rows ? `<table><thead><tr>${page.columns.map(([, label]) => `<th>${label}</th>`).join("")}<th></th></tr></thead><tbody>${rows}</tbody></table>` : `<div class="empty-state"><strong>Chưa có ${page.singular}</strong><span>Bấm nút thêm để tạo dữ liệu đầu tiên.</span></div>`}</div>`;
 }
 
@@ -177,9 +199,10 @@ function fieldOptions(source) {
 }
 
 function inputValue(record, name, fallback, type) {
-  if (!record && type === "date" && name === "start_date" && fallback === undefined) return new Date().toISOString().slice(0, 10);
+  if (!record && type === "date" && ["start_date", "valuation_date"].includes(name) && fallback === undefined) return new Date().toISOString().slice(0, 10);
   const value = record?.[name] ?? fallback ?? "";
   if (type === "datetime-local" && value) return new Date(value).toISOString().slice(0, 16);
+  if (type === "date" && value) return String(value).slice(0, 10);
   return value;
 }
 
@@ -223,7 +246,8 @@ async function saveRecord(event) {
   $("#dataError").textContent = "";
   try {
     const wasEditing = Boolean(state.editing);
-    const path = state.editing ? `/api/data/${state.page}/${state.editing.id}` : `/api/data/${state.page}`;
+    const table = pages[state.page].table || state.page;
+    const path = state.editing ? `/api/data/${table}/${state.editing.id}` : `/api/data/${table}`;
     await api(path, { method: state.editing ? "PATCH" : "POST", body: JSON.stringify(serializeForm(event.target)) });
     closeModal();
     toast(wasEditing ? "Đã lưu thay đổi." : "Đã thêm dữ liệu.");
@@ -238,7 +262,7 @@ async function deleteRecord(id) {
   const page = pages[state.page];
   if (!confirm(`Xóa ${page.singular} này? Thao tác không thể hoàn tác.`)) return;
   try {
-    await api(`/api/data/${state.page}/${id}`, { method: "DELETE" });
+    await api(`/api/data/${page.table || state.page}/${id}`, { method: "DELETE" });
     toast("Đã xóa dữ liệu.");
     await navigate(state.page);
   } catch (error) { toast(error.message, true); }
@@ -246,6 +270,46 @@ async function deleteRecord(id) {
 
 function renderError(error) {
   $("#content").innerHTML = `<div class="empty-state"><strong>Không tải được dữ liệu</strong><span>${escapeHtml(error.message)}</span><br><br><button class="secondary-button" data-retry>Thử lại</button></div>`;
+}
+
+async function refreshMarketPrices(button) {
+  button.disabled = true;
+  button.textContent = "Đang cập nhật…";
+  try {
+    const result = await api("/api/market/refresh", { method: "POST", body: "{}" });
+    const failures = result.results.filter((item) => !item.ok).length;
+    toast(failures ? `Đã cập nhật, ${failures} nguồn gặp lỗi.` : "Đã cập nhật giá thị trường mới nhất.", failures > 0);
+    await navigate(state.page);
+  } catch (error) {
+    toast(error.message, true);
+    button.disabled = false;
+    button.textContent = "↻ Cập nhật giá hôm nay";
+  }
+}
+
+async function generateAIAnalysis(button) {
+  button.disabled = true;
+  button.textContent = "Claude đang phân tích…";
+  const output = $("#aiAnalysis");
+  output.classList.add("loading-ai");
+  output.textContent = "Đang tổng hợp tài sản, dư nợ và dòng tiền hiện tại…";
+  try {
+    const result = await api("/api/ai/analysis", { method: "POST", body: JSON.stringify({ force: true }) });
+    output.classList.remove("loading-ai");
+    output.innerHTML = "";
+    const text = document.createElement("div");
+    text.className = "ai-text";
+    text.textContent = result.analysis;
+    const meta = document.createElement("small");
+    meta.textContent = `${result.model} · ${new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" }).format(new Date(result.generatedAt))}`;
+    output.append(text, meta);
+  } catch (error) {
+    output.classList.remove("loading-ai");
+    output.innerHTML = `<strong>Chưa thể phân tích</strong><span>${escapeHtml(error.message)}</span>`;
+  } finally {
+    button.disabled = false;
+    button.textContent = "Phân tích lại";
+  }
 }
 
 let toastTimer;
@@ -281,6 +345,8 @@ document.addEventListener("click", (event) => {
   if (event.target.closest("#addButton")) openModal();
   const edit = event.target.closest("[data-edit]"); if (edit) openModal(state.records.find((item) => item.id === edit.dataset.edit));
   const remove = event.target.closest("[data-delete]"); if (remove) deleteRecord(remove.dataset.delete);
+  const refresh = event.target.closest("[data-refresh-market]"); if (refresh) refreshMarketPrices(refresh);
+  const ai = event.target.closest("[data-ai-analysis]"); if (ai) generateAIAnalysis(ai);
   if (event.target.closest("[data-retry]")) navigate(state.page);
 });
 

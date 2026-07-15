@@ -204,6 +204,118 @@ function estimatedMonthlyDebtPayment(liability, priorRepayments = 0) {
   return originalPrincipal * monthlyRate * growth / (growth - 1);
 }
 
+const GOLD_CATEGORIES = new Set(["gold_bar_sjc", "gold_ring_9999", "gold_bar_other_brand", "gold_jewelry", "gold_24k", "gold_18k", "gold_14k", "gold_international", "other_gold"]);
+const FUND_CATEGORIES = new Set(["fund_certificate", "open_end_fund"]);
+
+function goldPricePerUnit(pricePerChi, unit) {
+  if (["luong", "cay"].includes(unit)) return pricePerChi * 10;
+  if (unit === "phan") return pricePerChi / 10;
+  if (unit === "gram") return pricePerChi / 3.75;
+  if (unit === "ounce") return pricePerChi * 8.2942608;
+  return pricePerChi;
+}
+
+function marketKeyForAsset(asset) {
+  if (GOLD_CATEGORIES.has(asset.category)) return `gold:${String(asset.category).toUpperCase()}`;
+  if (!asset.symbol) return null;
+  if (FUND_CATEGORIES.has(asset.category)) return `fund:${String(asset.symbol).trim().toUpperCase()}`;
+  if (["stock", "etf", "listed_bond", "warrant"].includes(asset.category)) return `stock:${String(asset.symbol).trim().toUpperCase()}`;
+  return null;
+}
+
+async function loadAssetsWithMarketPrices() {
+  const [assets, snapshots] = await Promise.all([
+    supabaseRequest("assets", { query: "?select=*&order=created_at.desc&limit=500" }),
+    supabaseRequest("price_snapshots", { query: "?select=asset_key,asset_type,buy_price,sell_price,source,fetched_at&order=fetched_at.desc&limit=1000" }),
+  ]);
+  const latest = new Map();
+  for (const snapshot of snapshots) {
+    const key = `${snapshot.asset_type}:${String(snapshot.asset_key).trim().toUpperCase()}`;
+    if (!latest.has(key)) latest.set(key, snapshot);
+  }
+  const today = new Date().toISOString().slice(0, 10);
+  return assets.map((asset) => {
+    const key = marketKeyForAsset(asset);
+    const snapshot = key ? latest.get(key) : null;
+    if (!snapshot || Number(snapshot.buy_price || 0) <= 0) {
+      const valuationDate = String(asset.valuation_date || "").slice(0, 10);
+      return { ...asset, price_source: asset.valuation_source || "Nhập tay", price_is_automatic: false, price_is_stale: valuationDate !== today };
+    }
+    const marketPrice = GOLD_CATEGORIES.has(asset.category)
+      ? goldPricePerUnit(Number(snapshot.buy_price), asset.unit)
+      : Number(snapshot.buy_price);
+    return {
+      ...asset,
+      current_price: marketPrice,
+      valuation_date: snapshot.fetched_at,
+      price_source: snapshot.source,
+      price_is_automatic: true,
+      price_is_stale: String(snapshot.fetched_at).slice(0, 10) !== today,
+    };
+  });
+}
+
+async function optionalTable(table, request) {
+  try { return await supabaseRequest(table, request); }
+  catch (error) {
+    if (error.status === 404) return [];
+    throw error;
+  }
+}
+
+async function buildFinancialSummary() {
+  const [accounts, assets, savings, liabilities, incomes, payables, repayments] = await Promise.all([
+    supabaseRequest("asset_accounts", { query: "?select=id,balance,currency,current_exchange_rate,is_included_in_net_worth" }),
+    loadAssetsWithMarketPrices(),
+    supabaseRequest("savings_deposits", { query: "?select=id,principal,currency,status" }),
+    supabaseRequest("liabilities", { query: "?select=id,name,liability_type,original_principal,current_balance,currency,annual_interest_rate,start_date,next_payment_date,monthly_payment,repayment_method,term_in_months,min_payment_rate,min_payment_fixed_amount" }),
+    supabaseRequest("recurring_incomes", { query: "?select=id,monthly_amount,is_active" }),
+    optionalTable("monthly_payables", { query: "?select=id,name,category,monthly_amount,currency,due_day,is_active,is_auto_pay,liability_id&order=due_day.asc" }),
+    supabaseRequest("asset_transactions", { query: "?select=liability_id&type=eq.repayment" }),
+  ]);
+  const inVnd = (amount, currency, rate) => Number(amount || 0) * (currency === "VND" ? 1 : Number(rate || 1));
+  const accountValue = accounts.filter((x) => x.is_included_in_net_worth).reduce((sum, x) => sum + inVnd(x.balance, x.currency, x.current_exchange_rate), 0);
+  const assetValue = assets.reduce((sum, x) => sum + inVnd(Number(x.quantity) * Number(x.current_price), x.currency), 0);
+  const savingsValue = savings.filter((x) => x.status === "active").reduce((sum, x) => sum + inVnd(x.principal, x.currency), 0);
+  const debt = liabilities.reduce((sum, x) => sum + inVnd(x.current_balance, x.currency), 0);
+  const monthlyIncome = incomes.filter((x) => x.is_active).reduce((sum, x) => sum + Number(x.monthly_amount || 0), 0);
+  const activePayables = payables.filter((x) => x.is_active);
+  const linkedLiabilityIDs = new Set(activePayables.map((x) => x.liability_id).filter(Boolean));
+  const repaymentCounts = repayments.reduce((counts, item) => {
+    if (item.liability_id) counts.set(item.liability_id, (counts.get(item.liability_id) || 0) + 1);
+    return counts;
+  }, new Map());
+  const automaticDebtPayables = liabilities
+    .filter((x) => !linkedLiabilityIDs.has(x.id))
+    .map((x) => ({ ...x, estimated_payment: estimatedMonthlyDebtPayment(x, repaymentCounts.get(x.id) || 0) }))
+    .filter((x) => x.estimated_payment > 0);
+  const monthlyRecurringPayables = activePayables.reduce((sum, x) => sum + inVnd(x.monthly_amount, x.currency), 0);
+  const monthlyDebtPayments = automaticDebtPayables.reduce((sum, x) => sum + inVnd(x.estimated_payment, x.currency), 0);
+  const monthlyPayables = monthlyRecurringPayables + monthlyDebtPayments;
+  const totalAssets = accountValue + assetValue + savingsValue;
+  const monthlyCashFlow = monthlyIncome - monthlyPayables;
+  const staleAssetCount = assets.filter((x) => x.price_is_stale).length;
+  return {
+    asOfDate: new Date().toISOString(), totalAssets, debt, netWorth: totalAssets - debt,
+    monthlyIncome, monthlyPayables, monthlyRecurringPayables, monthlyDebtPayments, monthlyCashFlow,
+    savingsRate: monthlyIncome > 0 ? monthlyCashFlow / monthlyIncome * 100 : 0,
+    debtToAssets: totalAssets > 0 ? debt / totalAssets * 100 : 0,
+    allocation: { accounts: accountValue, investments: assetValue, savings: savingsValue },
+    staleAssetCount,
+    upcomingPayables: activePayables.concat(automaticDebtPayables.map((x) => ({
+      id: `debt-${x.id}`, name: x.name,
+      category: x.liability_type === "credit_card" ? "credit_card" : "loan_payment",
+      monthly_amount: x.estimated_payment, currency: x.currency,
+      due_day: x.next_payment_date ? new Date(`${x.next_payment_date}T00:00:00Z`).getUTCDate() : 1,
+      is_auto_pay: true, source: "liability",
+    }))).sort((a, b) => {
+      const today = new Date().getDate();
+      return ((a.due_day - today + 31) % 31) - ((b.due_day - today + 31) % 31);
+    }).slice(0, 6),
+    counts: { accounts: accounts.length, assets: assets.length, savings: savings.length, liabilities: liabilities.length, payables: payables.length },
+  };
+}
+
 app.use("/api/data", requireAuth, (req, res, next) => {
   if (!sameOrigin(req)) return res.status(403).json({ error: "Yêu cầu không hợp lệ." });
   next();
@@ -211,70 +323,65 @@ app.use("/api/data", requireAuth, (req, res, next) => {
 
 app.get("/api/data/summary", async (_req, res, next) => {
   try {
-    const optionalTable = async (table, request) => {
-      try { return await supabaseRequest(table, request); }
-      catch (error) {
-        if (error.status === 404) return [];
-        throw error;
-      }
-    };
-    const [accounts, assets, savings, liabilities, incomes, payables, repayments] = await Promise.all([
-      supabaseRequest("asset_accounts", { query: "?select=id,balance,currency,current_exchange_rate,is_included_in_net_worth" }),
-      supabaseRequest("assets", { query: "?select=id,category,quantity,current_price,currency" }),
-      supabaseRequest("savings_deposits", { query: "?select=id,principal,currency,status" }),
-      supabaseRequest("liabilities", { query: "?select=id,name,liability_type,original_principal,current_balance,currency,annual_interest_rate,start_date,next_payment_date,monthly_payment,repayment_method,term_in_months,min_payment_rate,min_payment_fixed_amount" }),
-      supabaseRequest("recurring_incomes", { query: "?select=id,monthly_amount,is_active" }),
-      optionalTable("monthly_payables", { query: "?select=id,name,category,monthly_amount,currency,due_day,is_active,is_auto_pay,liability_id&order=due_day.asc" }),
-      supabaseRequest("asset_transactions", { query: "?select=liability_id&type=eq.repayment" }),
-    ]);
-    const inVnd = (amount, currency, rate) => Number(amount || 0) * (currency === "VND" ? 1 : Number(rate || 1));
-    const accountValue = accounts.filter((x) => x.is_included_in_net_worth).reduce((sum, x) => sum + inVnd(x.balance, x.currency, x.current_exchange_rate), 0);
-    const assetValue = assets.reduce((sum, x) => sum + inVnd(Number(x.quantity) * Number(x.current_price), x.currency), 0);
-    const savingsValue = savings.filter((x) => x.status === "active").reduce((sum, x) => sum + inVnd(x.principal, x.currency), 0);
-    const debt = liabilities.reduce((sum, x) => sum + inVnd(x.current_balance, x.currency), 0);
-    const monthlyIncome = incomes.filter((x) => x.is_active).reduce((sum, x) => sum + Number(x.monthly_amount || 0), 0);
-    const activePayables = payables.filter((x) => x.is_active);
-    const linkedLiabilityIDs = new Set(activePayables.map((x) => x.liability_id).filter(Boolean));
-    const repaymentCounts = repayments.reduce((counts, item) => {
-      if (item.liability_id) counts.set(item.liability_id, (counts.get(item.liability_id) || 0) + 1);
-      return counts;
-    }, new Map());
-    const automaticDebtPayables = liabilities
-      .filter((x) => !linkedLiabilityIDs.has(x.id))
-      .map((x) => ({ ...x, estimated_payment: estimatedMonthlyDebtPayment(x, repaymentCounts.get(x.id) || 0) }))
-      .filter((x) => x.estimated_payment > 0);
-    const monthlyRecurringPayables = activePayables.reduce((sum, x) => sum + inVnd(x.monthly_amount, x.currency), 0);
-    const monthlyDebtPayments = automaticDebtPayables.reduce((sum, x) => sum + inVnd(x.estimated_payment, x.currency), 0);
-    const monthlyPayables = monthlyRecurringPayables + monthlyDebtPayments;
-    const totalAssets = accountValue + assetValue + savingsValue;
-    const monthlyCashFlow = monthlyIncome - monthlyPayables;
-    res.json({
-      totalAssets,
-      debt,
-      netWorth: totalAssets - debt,
-      monthlyIncome,
-      monthlyPayables,
-      monthlyRecurringPayables,
-      monthlyDebtPayments,
-      monthlyCashFlow,
-      savingsRate: monthlyIncome > 0 ? monthlyCashFlow / monthlyIncome * 100 : 0,
-      debtToAssets: totalAssets > 0 ? debt / totalAssets * 100 : 0,
-      allocation: { accounts: accountValue, investments: assetValue, savings: savingsValue },
-      upcomingPayables: activePayables.concat(automaticDebtPayables.map((x) => ({
-        id: `debt-${x.id}`,
-        name: x.name,
-        category: x.liability_type === "credit_card" ? "credit_card" : "loan_payment",
-        monthly_amount: x.estimated_payment,
-        currency: x.currency,
-        due_day: x.next_payment_date ? new Date(`${x.next_payment_date}T00:00:00Z`).getUTCDate() : 1,
-        is_auto_pay: true,
-        source: "liability",
-      }))).sort((a, b) => {
-        const today = new Date().getDate();
-        return ((a.due_day - today + 31) % 31) - ((b.due_day - today + 31) % 31);
-      }).slice(0, 6),
-      counts: { accounts: accounts.length, assets: assets.length, savings: savings.length, liabilities: liabilities.length, payables: payables.length },
+    res.json(await buildFinancialSummary());
+  } catch (error) { next(error); }
+});
+
+async function invokeSupabaseFunction(name) {
+  const { url, key } = supabaseConfig();
+  const response = await fetch(`${url}/functions/v1/${name}`, {
+    method: "POST",
+    headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: "{}",
+    signal: AbortSignal.timeout(30_000),
+  });
+  const text = await response.text();
+  let data;
+  try { data = text ? JSON.parse(text) : {}; } catch { data = { message: text }; }
+  if (!response.ok) throw new Error(data?.error || `${name} trả về lỗi ${response.status}`);
+  return data;
+}
+
+app.post("/api/market/refresh", requireAuth, async (req, res, next) => {
+  try {
+    if (!sameOrigin(req)) return res.status(403).json({ error: "Yêu cầu không hợp lệ." });
+    const names = ["fetch-stock-price", "fetch-gold-price", "fetch-fund-nav"];
+    const settled = await Promise.allSettled(names.map(invokeSupabaseFunction));
+    const results = settled.map((result, index) => result.status === "fulfilled"
+      ? { name: names[index], ok: true, ...result.value }
+      : { name: names[index], ok: false, error: result.reason?.message || "Không thể cập nhật" });
+    if (results.every((item) => !item.ok)) return res.status(502).json({ error: "Không cập nhật được nguồn giá nào.", results });
+    res.json({ refreshedAt: new Date().toISOString(), results });
+  } catch (error) { next(error); }
+});
+
+let aiCache = null;
+app.post("/api/ai/analysis", requireAuth, async (req, res, next) => {
+  try {
+    if (!sameOrigin(req)) return res.status(403).json({ error: "Yêu cầu không hợp lệ." });
+    const apiKey = process.env.ANTHROPIC_API_KEY || "";
+    if (!apiKey) return res.status(503).json({ error: "Chưa cấu hình ANTHROPIC_API_KEY trên Render." });
+    if (!req.body?.force && aiCache && Date.now() - aiCache.cachedAt < 15 * 60_000) return res.json(aiCache.value);
+    const financial = await buildFinancialSummary();
+    const model = process.env.ANTHROPIC_MODEL || "claude-opus-4-8";
+    const prompt = `Phân tích tình hình tài chính cá nhân tại ${financial.asOfDate} dựa trên dữ liệu VND sau:\n${JSON.stringify(financial)}\n\nTrả lời bằng tiếng Việt, ngắn gọn nhưng định lượng, theo đúng 4 mục: 1) Đánh giá hiện tại; 2) Rủi ro ưu tiên; 3) Chiến lược 30 ngày; 4) Chiến lược 6-12 tháng. Tập trung vào dòng tiền, tỷ lệ nợ, quỹ dự phòng, lịch trả nợ, thanh khoản và mức độ tập trung tài sản. Nêu tối đa 3 hành động cụ thể theo thứ tự ưu tiên. Không bịa dữ liệu, không hứa lợi nhuận, không khuyến nghị mua/bán mã chứng khoán cụ thể.`;
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+      body: JSON.stringify({
+        model, max_tokens: 1000, temperature: 0.2,
+        system: "Bạn là chuyên gia lập kế hoạch tài chính cá nhân thận trọng. Chỉ sử dụng số liệu được cung cấp; mọi chiến lược phải có lý do định lượng và cảnh báo đây là phân tích tham khảo.",
+        messages: [{ role: "user", content: prompt }],
+      }),
+      signal: AbortSignal.timeout(45_000),
     });
+    const body = await response.json();
+    if (!response.ok) throw Object.assign(new Error(body?.error?.message || `Claude API trả về lỗi ${response.status}`), { status: 502 });
+    const analysis = body?.content?.find((item) => item.type === "text")?.text;
+    if (!analysis) throw Object.assign(new Error("Claude không trả về nội dung phân tích."), { status: 502 });
+    const value = { analysis, generatedAt: new Date().toISOString(), model, disclaimer: "Phân tích AI chỉ mang tính tham khảo, không thay thế tư vấn tài chính chuyên nghiệp." };
+    aiCache = { cachedAt: Date.now(), value };
+    res.json(value);
   } catch (error) { next(error); }
 });
 
@@ -283,6 +390,7 @@ app.get("/api/data/:table", async (req, res, next) => {
     if (!TABLES.has(req.params.table)) return res.status(404).json({ error: "Loại dữ liệu không tồn tại." });
     const limit = Math.min(Math.max(Number(req.query.limit) || 200, 1), 500);
     const order = req.params.table === "valuation_snapshots" ? "date.desc" : req.params.table === "asset_transactions" ? "date.desc" : "created_at.desc";
+    if (req.params.table === "assets") return res.json((await loadAssetsWithMarketPrices()).slice(0, limit));
     res.json(await supabaseRequest(req.params.table, { query: `?select=*&order=${order}&limit=${limit}` }));
   } catch (error) { next(error); }
 });
