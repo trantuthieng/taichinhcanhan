@@ -316,6 +316,55 @@ async function buildFinancialSummary() {
   };
 }
 
+async function loadLiabilitiesWithCalculatedPayments() {
+  const [liabilities, repayments] = await Promise.all([
+    supabaseRequest("liabilities", { query: "?select=*&order=created_at.desc&limit=500" }),
+    supabaseRequest("asset_transactions", { query: "?select=liability_id&type=eq.repayment" }),
+  ]);
+  const counts = repayments.reduce((result, item) => {
+    if (item.liability_id) result.set(item.liability_id, (result.get(item.liability_id) || 0) + 1);
+    return result;
+  }, new Map());
+  return liabilities.map((item) => ({
+    ...item,
+    calculated_monthly_payment: item.liability_type === "other_payable"
+      ? null
+      : estimatedMonthlyDebtPayment(item, counts.get(item.id) || 0),
+  }));
+}
+
+function nextCreditCardDueDate(dueDay) {
+  const now = new Date();
+  let candidate = new Date(now.getFullYear(), now.getMonth(), Math.min(Math.max(Number(dueDay || 5), 1), 28));
+  if (candidate <= now) candidate = new Date(now.getFullYear(), now.getMonth() + 1, Math.min(Math.max(Number(dueDay || 5), 1), 28));
+  return candidate.toISOString().slice(0, 10);
+}
+
+function normalizeLiabilityBody(body, isNew) {
+  const normalized = { ...body };
+  if (normalized.liability_type === "credit_card") {
+    normalized.original_principal = Number(normalized.credit_limit || 0);
+    normalized.annual_interest_rate = Number(normalized.annual_interest_rate || 0);
+    normalized.current_balance = Number(normalized.current_balance || 0);
+    normalized.start_date ||= new Date().toISOString().slice(0, 10);
+    normalized.next_payment_date = nextCreditCardDueDate(normalized.payment_due_day);
+  } else if (normalized.liability_type === "other_payable") {
+    if (isNew) normalized.original_principal = Number(normalized.current_balance || 0);
+    normalized.annual_interest_rate = 0;
+    normalized.next_payment_date = normalized.maturity_date || null;
+  } else if (normalized.start_date && Number(normalized.term_in_months || 0) > 0) {
+    const maturity = new Date(`${normalized.start_date}T00:00:00Z`);
+    maturity.setUTCMonth(maturity.getUTCMonth() + Number(normalized.term_in_months));
+    normalized.maturity_date = maturity.toISOString().slice(0, 10);
+    if (isNew && !normalized.next_payment_date) {
+      const next = new Date(`${normalized.start_date}T00:00:00Z`);
+      next.setUTCMonth(next.getUTCMonth() + 1);
+      normalized.next_payment_date = next.toISOString().slice(0, 10);
+    }
+  }
+  return normalized;
+}
+
 app.use("/api/data", requireAuth, (req, res, next) => {
   if (!sameOrigin(req)) return res.status(403).json({ error: "Yêu cầu không hợp lệ." });
   next();
@@ -391,6 +440,7 @@ app.get("/api/data/:table", async (req, res, next) => {
     const limit = Math.min(Math.max(Number(req.query.limit) || 200, 1), 500);
     const order = req.params.table === "valuation_snapshots" ? "date.desc" : req.params.table === "asset_transactions" ? "date.desc" : "created_at.desc";
     if (req.params.table === "assets") return res.json((await loadAssetsWithMarketPrices()).slice(0, limit));
+    if (req.params.table === "liabilities") return res.json((await loadLiabilitiesWithCalculatedPayments()).slice(0, limit));
     res.json(await supabaseRequest(req.params.table, { query: `?select=*&order=${order}&limit=${limit}` }));
   } catch (error) { next(error); }
 });
@@ -399,8 +449,9 @@ app.post("/api/data/:table", async (req, res, next) => {
   try {
     const table = req.params.table;
     if (!TABLES.has(table) || READ_ONLY_TABLES.has(table)) return res.status(405).json({ error: "Không thể thêm loại dữ liệu này." });
-    const body = { ...req.body };
+    let body = { ...req.body };
     delete body.id; delete body.created_at; delete body.updated_at;
+    if (table === "liabilities") body = normalizeLiabilityBody(body, true);
     if ("edited_by" in body || ["asset_accounts", "asset_transactions", "savings_deposits", "liabilities", "recurring_incomes", "monthly_payables"].includes(table)) body.edited_by = req.session.username;
     res.status(201).json(await supabaseRequest(table, { method: "POST", body }));
   } catch (error) { next(error); }
@@ -411,8 +462,9 @@ app.patch("/api/data/:table/:id", async (req, res, next) => {
     const table = req.params.table;
     if (!TABLES.has(table) || READ_ONLY_TABLES.has(table)) return res.status(405).json({ error: "Không thể sửa loại dữ liệu này." });
     if (!/^[0-9a-f-]{36}$/i.test(req.params.id)) return res.status(400).json({ error: "ID không hợp lệ." });
-    const body = { ...req.body };
+    let body = { ...req.body };
     delete body.id; delete body.created_at;
+    if (table === "liabilities") body = normalizeLiabilityBody(body, false);
     if (table !== "asset_transactions") body.updated_at = new Date().toISOString();
     if (["asset_accounts", "asset_transactions", "savings_deposits", "liabilities", "recurring_incomes", "monthly_payables"].includes(table)) body.edited_by = req.session.username;
     res.json(await supabaseRequest(table, { method: "PATCH", query: `?id=eq.${req.params.id}`, body }));

@@ -11,6 +11,9 @@ const options = {
   fundCategory: [["fund_certificate", "Chứng chỉ quỹ"], ["open_end_fund", "Quỹ mở"]],
   unit: [["share", "Cổ phiếu / CCQ"], ["luong", "Lượng"], ["cay", "Cây"], ["chi", "Chỉ"], ["phan", "Phân"], ["gram", "Gram"], ["ounce", "Ounce"], ["item", "Tài sản"]],
   liabilityType: [["mortgage_loan", "Vay mua nhà"], ["car_loan", "Vay mua xe"], ["consumer_loan", "Vay tiêu dùng"], ["unsecured_loan", "Vay tín chấp"], ["family_loan", "Vay người thân"], ["installment_plan", "Trả góp"], ["credit_card", "Thẻ tín dụng"], ["other_payable", "Khoản phải trả khác"]],
+  interestRateType: [["fixed", "Cố định toàn kỳ"], ["floating", "Thả nổi / cố định rồi thả nổi"]],
+  repaymentMethod: [["equal_principal", "Gốc đều, lãi giảm dần"], ["annuity", "Tổng tiền trả đều hàng kỳ"]],
+  paymentFrequency: [["monthly", "Hàng tháng"], ["quarterly", "Hàng quý"], ["semi_annual", "Mỗi 6 tháng"], ["annual", "Hàng năm"], ["one_time", "Thanh toán một lần"]],
   transactionType: [["deposit", "Nạp tiền"], ["withdrawal", "Rút tiền"], ["transfer", "Chuyển tiền"], ["buy", "Mua"], ["sell", "Bán"], ["interest", "Tiền lãi"], ["dividend", "Cổ tức"], ["maturity", "Tất toán"], ["repayment", "Trả nợ"], ["fee", "Phí"], ["tax", "Thuế"], ["adjustment", "Điều chỉnh"]],
   payableCategory: [["loan_interest", "Lãi vay"], ["loan_payment", "Khoản trả vay"], ["rent", "Tiền thuê nhà"], ["credit_card", "Thẻ tín dụng"], ["utilities", "Điện, nước, internet"], ["insurance", "Bảo hiểm"], ["tax", "Thuế, phí"], ["family", "Chi phí gia đình"], ["subscription", "Dịch vụ đăng ký"], ["other", "Khoản khác"]],
 };
@@ -41,8 +44,13 @@ const pages = {
   },
   liabilities: {
     label: "Nợ phải trả", icon: "▾", title: "Nợ phải trả", eyebrow: "NGHĨA VỤ TÀI CHÍNH", singular: "khoản nợ",
-    columns: [["name", "Tên"], ["liability_type", "Loại", "liabilityType"], ["lender", "Bên cho vay"], ["current_balance", "Dư nợ", "money"], ["annual_interest_rate", "Lãi suất", "percent"], ["next_payment_date", "Kỳ trả tới", "date"]],
-    fields: [["name", "Tên khoản nợ", "text", true], ["liability_type", "Loại nợ", "select", true, "liabilityType", "other_payable"], ["lender", "Bên cho vay"], ["currency", "Tiền tệ", "select", true, "currency", "VND"], ["original_principal", "Số tiền ban đầu", "number", true], ["current_balance", "Dư nợ hiện tại", "number", true], ["annual_interest_rate", "Lãi suất năm (%)", "number", true, null, 0], ["start_date", "Ngày bắt đầu", "date", true], ["maturity_date", "Ngày kết thúc", "date"], ["next_payment_date", "Ngày trả tiếp theo", "date"], ["monthly_payment", "Số tiền trả hàng tháng", "number"], ["note", "Ghi chú", "textarea"]],
+    columns: [["name", "Tên"], ["liability_type", "Loại", "liabilityType"], ["lender", "Bên cho vay"], ["current_balance", "Dư nợ", "money"], ["annual_interest_rate", "Lãi suất", "percent"], ["calculated_monthly_payment", "Kỳ trả dự kiến", "money"], ["next_payment_date", "Kỳ trả tới", "date"]],
+    fields: [
+      ["name", "Tên khoản nợ", "text", true], ["liability_type", "Loại nợ", "select", true, "liabilityType", "other_payable"], ["lender", "Bên cho vay / ngân hàng"], ["currency", "Tiền tệ", "select", true, "currency", "VND"], ["current_balance", "Dư nợ hiện tại", "number", true], ["start_date", "Ngày bắt đầu / phát sinh", "date", true], ["annual_interest_rate", "Lãi suất năm (%)", "number", false, null, 0, "interest"],
+      ["original_principal", "Số tiền vay ban đầu", "number", true, null, null, "term"], ["interest_rate_type", "Cơ chế lãi suất", "select", true, "interestRateType", "fixed", "term"], ["fixed_rate_end_date", "Ngày bắt đầu thả nổi", "date", false, null, null, "term"], ["repayment_method", "Phương thức trả", "select", true, "repaymentMethod", "annuity", "term"], ["term_in_months", "Kỳ hạn (tháng)", "number", true, null, 12, "term"], ["payment_frequency", "Kỳ thanh toán", "select", true, "paymentFrequency", "monthly", "term"], ["early_repayment_fee_rate", "Phí trả trước hạn (%)", "number", false, null, null, "term"], ["grace_period_months", "Ân hạn gốc (tháng)", "number", false, null, null, "term"], ["collateral", "Tài sản bảo đảm", "text", false, null, null, "term"],
+      ["credit_limit", "Hạn mức tín dụng", "number", true, null, null, "credit"], ["statement_day", "Ngày sao kê", "number", true, null, 15, "credit"], ["payment_due_day", "Ngày đến hạn", "number", true, null, 5, "credit"], ["interest_free_days", "Số ngày miễn lãi", "number", true, null, 45, "credit"], ["min_payment_rate", "Tỷ lệ thanh toán tối thiểu (%)", "number", true, null, 5, "credit"], ["min_payment_fixed_amount", "Số tiền tối thiểu cố định", "number", false, null, 0, "credit"], ["annual_fee", "Phí thường niên", "number", false, null, 0, "credit"], ["late_fee", "Phí trả chậm", "number", false, null, 0, "credit"],
+      ["maturity_date", "Hạn trả dự kiến", "date", false, null, null, "other"], ["note", "Ghi chú", "textarea"]
+    ],
   },
   recurring_incomes: {
     label: "Thu nhập", icon: "+", title: "Thu nhập định kỳ", eyebrow: "DÒNG TIỀN", singular: "nguồn thu",
@@ -207,13 +215,17 @@ function inputValue(record, name, fallback, type) {
 }
 
 function renderField(field, record) {
-  const [name, label, type = "text", required = false, source, fallback] = field;
+  const [name, label, type = "text", required = false, source, fallback, group] = field;
   const value = inputValue(record, name, fallback, type);
-  if (type === "checkbox") return `<label class="checkbox-label"><input name="${name}" type="checkbox" ${value ? "checked" : ""}> ${label}</label>`;
-  if (type === "select") return `<label>${label}<select name="${name}" ${required ? "required" : ""}><option value="">— Chọn —</option>${fieldOptions(source).map(([key, text]) => `<option value="${escapeHtml(key)}" ${key === value ? "selected" : ""}>${escapeHtml(text)}</option>`).join("")}</select></label>`;
-  if (type === "textarea") return `<label class="full">${label}<textarea name="${name}">${escapeHtml(value)}</textarea></label>`;
-  const step = type === "number" ? 'step="any"' : "";
-  return `<label>${label}<input name="${name}" type="${type}" value="${escapeHtml(value)}" ${step} ${required ? "required" : ""}></label>`;
+  let control;
+  if (type === "checkbox") control = `<label class="checkbox-label"><input name="${name}" type="checkbox" ${value ? "checked" : ""}> ${label}</label>`;
+  else if (type === "select") control = `<label>${label}<select name="${name}" ${required ? "required" : ""}><option value="">— Chọn —</option>${fieldOptions(source).map(([key, text]) => `<option value="${escapeHtml(key)}" ${key === value ? "selected" : ""}>${escapeHtml(text)}</option>`).join("")}</select></label>`;
+  else if (type === "textarea") control = `<label class="full">${label}<textarea name="${name}">${escapeHtml(value)}</textarea></label>`;
+  else {
+    const step = type === "number" ? 'step="any"' : "";
+    control = `<label>${label}<input name="${name}" type="${type}" value="${escapeHtml(value)}" ${step} ${required ? "required" : ""}></label>`;
+  }
+  return group ? `<div class="conditional-field ${type === "textarea" ? "full" : ""}" data-liability-group="${group}">${control}</div>` : control;
 }
 
 function openModal(record = null) {
@@ -221,8 +233,10 @@ function openModal(record = null) {
   state.editing = record;
   $("#modalEyebrow").textContent = record ? "CẬP NHẬT" : "THÊM MỚI";
   $("#modalTitle").textContent = record ? `Sửa ${page.singular}` : `Thêm ${page.singular}`;
-  $("#dataForm").innerHTML = page.fields.map((field) => renderField(field, record)).join("") + `<p class="form-error full" id="dataError"></p><div class="form-actions"><button type="button" class="secondary-button" data-close>Hủy</button><button type="submit" class="primary-button">${record ? "Lưu thay đổi" : "Thêm mới"}</button></div>`;
+  const liabilityPreview = state.page === "liabilities" ? '<div id="liabilityPreview" class="liability-preview full"></div>' : "";
+  $("#dataForm").innerHTML = page.fields.map((field) => renderField(field, record)).join("") + liabilityPreview + `<p class="form-error full" id="dataError"></p><div class="form-actions"><button type="button" class="secondary-button" data-close>Hủy</button><button type="submit" class="primary-button">${record ? "Lưu thay đổi" : "Thêm mới"}</button></div>`;
   $("#modal").classList.remove("hidden");
+  if (state.page === "liabilities") setupLiabilityForm(record);
 }
 
 function closeModal() { $("#modal").classList.add("hidden"); state.editing = null; }
@@ -232,11 +246,84 @@ function serializeForm(form) {
   const data = {};
   for (const [name, _label, type = "text"] of page.fields) {
     const input = form.elements[name];
+    if (!input || input.disabled) continue;
     if (type === "checkbox") data[name] = input.checked;
     else if (input.value !== "") data[name] = type === "number" ? Number(input.value) : type === "datetime-local" ? new Date(input.value).toISOString() : input.value;
     else if (state.editing) data[name] = null;
   }
   return data;
+}
+
+function liabilityGroup(type) {
+  if (type === "credit_card") return "credit";
+  if (type === "other_payable") return "other";
+  return "term";
+}
+
+function setupLiabilityForm(record) {
+  const form = $("#dataForm");
+  form.querySelectorAll("[required]").forEach((input) => { input.dataset.wasRequired = "true"; });
+  const typeInput = form.elements.liability_type;
+  const updateVisibility = () => {
+    const group = liabilityGroup(typeInput.value);
+    form.querySelectorAll("[data-liability-group]").forEach((wrapper) => {
+      const fieldGroup = wrapper.dataset.liabilityGroup;
+      const visible = fieldGroup === group || (fieldGroup === "interest" && group !== "other");
+      wrapper.classList.toggle("hidden", !visible);
+      wrapper.querySelectorAll("input,select,textarea").forEach((input) => {
+        input.disabled = !visible;
+        if (!visible) input.removeAttribute("required");
+        else if (input.dataset.wasRequired === "true") input.required = true;
+      });
+    });
+    const fixedEndInput = form.elements.fixed_rate_end_date;
+    if (fixedEndInput) {
+      const wrapper = fixedEndInput.closest("[data-liability-group]");
+      const visible = group === "term" && form.elements.interest_rate_type?.value === "floating";
+      wrapper.classList.toggle("hidden", !visible);
+      fixedEndInput.disabled = !visible;
+    }
+    const interestInput = form.elements.annual_interest_rate;
+    if (interestInput) interestInput.required = group === "term";
+    updateLiabilityPreview(record);
+  };
+  typeInput.addEventListener("change", updateVisibility);
+  form.elements.interest_rate_type?.addEventListener("change", updateVisibility);
+  form.addEventListener("input", () => updateLiabilityPreview(record));
+  updateVisibility();
+}
+
+function updateLiabilityPreview(record) {
+  const form = $("#dataForm");
+  const preview = $("#liabilityPreview");
+  if (!form || !preview) return;
+  const type = form.elements.liability_type?.value;
+  const group = liabilityGroup(type);
+  const balance = Number(form.elements.current_balance?.value || 0);
+  let amount = 0;
+  let label = "Số phải trả kỳ tới (ước tính)";
+  if (group === "credit") {
+    const rate = Number(form.elements.min_payment_rate?.value || 0);
+    const fixed = Number(form.elements.min_payment_fixed_amount?.value || 0);
+    amount = Math.min(balance, Math.max(balance * rate / 100, fixed));
+    label = "Thanh toán tối thiểu kỳ tới";
+  } else if (group === "other") {
+    amount = balance;
+    label = "Tổng khoản phải trả";
+  } else {
+    const original = Number(form.elements.original_principal?.value || 0);
+    const months = Number(form.elements.term_in_months?.value || 0);
+    const monthlyRate = Number(form.elements.annual_interest_rate?.value || 0) / 100 / 12;
+    const method = form.elements.repayment_method?.value;
+    if (record && original === Number(record.original_principal) && months === Number(record.term_in_months) && Number(record.calculated_monthly_payment) > 0) amount = Number(record.calculated_monthly_payment);
+    else if (months > 0 && method === "equal_principal") amount = original / months + balance * monthlyRate;
+    else if (months > 0 && monthlyRate === 0) amount = original / months;
+    else if (months > 0) {
+      const growth = Math.pow(1 + monthlyRate, months);
+      amount = original * monthlyRate * growth / (growth - 1);
+    }
+  }
+  preview.innerHTML = `<span>${label}</span><strong>${money(Number.isFinite(amount) ? amount : 0)}</strong><small>Tự động tính theo cùng nguyên tắc với ứng dụng iOS.</small>`;
 }
 
 async function saveRecord(event) {
