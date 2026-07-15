@@ -25,8 +25,8 @@ const pages = {
   },
   savings_deposits: {
     label: "Tiết kiệm", icon: "◉", title: "Sổ tiết kiệm", eyebrow: "TIỀN GỬI", singular: "sổ tiết kiệm",
-    columns: [["name", "Tên sổ"], ["bank_name", "Ngân hàng"], ["principal", "Tiền gốc", "money"], ["annual_interest_rate", "Lãi suất", "percent"], ["maturity_date", "Ngày đáo hạn", "date"], ["status", "Trạng thái"]],
-    fields: [["name", "Tên sổ", "text", true], ["bank_name", "Ngân hàng", "text", true], ["principal", "Tiền gốc", "number", true], ["currency", "Tiền tệ", "select", true, "currency", "VND"], ["annual_interest_rate", "Lãi suất năm (%)", "number", true], ["start_date", "Ngày gửi", "date", true], ["maturity_date", "Ngày đáo hạn", "date", true], ["term_in_months", "Kỳ hạn (tháng)", "number", true], ["interest_payment_type", "Trả lãi", "select", true, [["end_of_term", "Cuối kỳ"], ["monthly", "Hàng tháng"], ["upfront", "Trả trước"]], "end_of_term"], ["auto_renewal_type", "Tái tục", "select", false, [["none", "Không tái tục"], ["principal_only", "Chỉ tiền gốc"], ["principal_and_interest", "Gốc và lãi"]], "none"], ["status", "Trạng thái", "select", true, [["active", "Đang hoạt động"], ["matured", "Đã đáo hạn"], ["closed", "Đã đóng"], ["withdrawn_early", "Rút trước hạn"]], "active"], ["contract_number", "Số hợp đồng"]],
+    columns: [["name", "Tên sổ"], ["principal", "Tiền gốc", "money"], ["current_interest", "Lãi hiện tại", "money"], ["annual_interest_rate", "Lãi suất/năm", "percent"], ["term_in_days", "Kỳ hạn", "termDays"], ["progress_days", "Tiến độ", "progress"], ["maturity_date", "Ngày đáo hạn", "date"], ["contract_number", "Số tài khoản"]],
+    fields: [["name", "Tên sổ", "text", true], ["bank_name", "Ngân hàng", "text", true], ["principal", "Tiền gốc", "number", true], ["current_interest", "Lãi hiện tại", "number"], ["currency", "Tiền tệ", "select", true, "currency", "VND"], ["annual_interest_rate", "Lãi suất năm (%)", "number", true], ["start_date", "Ngày gửi", "date", true], ["maturity_date", "Ngày đáo hạn", "date", true], ["term_in_months", "Kỳ hạn (tháng)", "number", true], ["term_in_days", "Kỳ hạn (ngày)", "number"], ["progress_days", "Tiến độ hiện tại (ngày)", "number"], ["interest_snapshot_date", "Ngày chốt lãi và tiến độ", "date"], ["interest_payment_type", "Trả lãi", "select", true, [["end_of_term", "Cuối kỳ"], ["monthly", "Hàng tháng"], ["upfront", "Trả trước"]], "end_of_term"], ["auto_renewal_type", "Tái tục", "select", false, [["none", "Không tái tục"], ["principal_only", "Chỉ tiền gốc"], ["principal_and_interest", "Gốc và lãi"]], "none"], ["status", "Trạng thái", "select", true, [["active", "Đang hoạt động"], ["matured", "Đã đáo hạn"], ["closed", "Đã đóng"], ["withdrawn_early", "Rút trước hạn"]], "active"], ["contract_number", "Số tài khoản"], ["source_image", "Ảnh nguồn"]],
   },
   liabilities: {
     label: "Nợ phải trả", icon: "▾", title: "Nợ phải trả", eyebrow: "NGHĨA VỤ TÀI CHÍNH", singular: "khoản nợ",
@@ -79,6 +79,8 @@ function formatCell(record, [key, _label, format]) {
   if (format === "money") return money(value, record.currency || "VND");
   if (format === "number") return new Intl.NumberFormat("vi-VN").format(Number(value));
   if (format === "percent") return `${new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 2 }).format(Number(value))}%`;
+  if (format === "termDays") return `${new Intl.NumberFormat("vi-VN").format(Number(value))} ngày`;
+  if (format === "progress") return `${new Intl.NumberFormat("vi-VN").format(Number(value))}/${new Intl.NumberFormat("vi-VN").format(Number(record.term_in_days || 0))} ngày`;
   if (format === "date") return new Intl.DateTimeFormat("vi-VN").format(new Date(`${value}T00:00:00`));
   if (format === "datetime") return new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" }).format(new Date(value));
   if (format === "boolean") return value ? "Đang bật" : "Đã tắt";
