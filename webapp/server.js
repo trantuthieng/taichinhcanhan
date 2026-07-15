@@ -1,0 +1,248 @@
+const crypto = require("node:crypto");
+const path = require("node:path");
+const express = require("express");
+
+const app = express();
+const PORT = Number(process.env.PORT || 3000);
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
+const DEFAULT_PASSWORD_HASH = "scrypt:4a16ab466659b13653606ffe7df7c473:3204421c000fdf52f43878be5d535d5f4835dfe5d67a24afb113dca49da5448e15d56af1c41de2cacbcb276fa87af2fe4bd4cc5265dd582a3e1a4e3a8401356e";
+const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || DEFAULT_PASSWORD_HASH;
+const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString("hex");
+const SESSION_TTL_SECONDS = 60 * 60 * 12;
+
+const TABLES = new Set([
+  "asset_accounts",
+  "assets",
+  "asset_transactions",
+  "savings_deposits",
+  "liabilities",
+  "recurring_incomes",
+  "valuation_snapshots",
+]);
+const READ_ONLY_TABLES = new Set(["valuation_snapshots"]);
+const loginAttempts = new Map();
+
+app.disable("x-powered-by");
+app.set("trust proxy", 1);
+app.use(express.json({ limit: "256kb" }));
+app.use(express.static(path.join(__dirname, "public"), { extensions: ["html"] }));
+
+function base64url(value) {
+  return Buffer.from(value).toString("base64url");
+}
+
+function sign(value) {
+  return crypto.createHmac("sha256", SESSION_SECRET).update(value).digest("base64url");
+}
+
+function createSession(username) {
+  const payload = base64url(JSON.stringify({ username, exp: Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS }));
+  return `${payload}.${sign(payload)}`;
+}
+
+function parseCookies(header = "") {
+  return Object.fromEntries(
+    header.split(";").map((part) => part.trim()).filter(Boolean).map((part) => {
+      const index = part.indexOf("=");
+      return [decodeURIComponent(part.slice(0, index)), decodeURIComponent(part.slice(index + 1))];
+    }),
+  );
+}
+
+function getSession(req) {
+  const token = parseCookies(req.headers.cookie).asset_session;
+  if (!token) return null;
+  const [payload, signature] = token.split(".");
+  if (!payload || !signature) return null;
+  const expected = sign(payload);
+  const a = Buffer.from(signature);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+  try {
+    const session = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+    return session.exp > Date.now() / 1000 ? session : null;
+  } catch {
+    return null;
+  }
+}
+
+function requireAuth(req, res, next) {
+  const session = getSession(req);
+  if (!session) return res.status(401).json({ error: "Phiên đăng nhập đã hết hạn." });
+  req.session = session;
+  next();
+}
+
+function verifyPassword(password) {
+  const [algorithm, salt, expectedHex] = ADMIN_PASSWORD_HASH.split(":");
+  if (algorithm !== "scrypt" || !salt || !expectedHex) return Promise.resolve(false);
+  return new Promise((resolve) => {
+    crypto.scrypt(password, salt, expectedHex.length / 2, (error, key) => {
+      if (error) return resolve(false);
+      const expected = Buffer.from(expectedHex, "hex");
+      resolve(key.length === expected.length && crypto.timingSafeEqual(key, expected));
+    });
+  });
+}
+
+function checkLoginRate(ip) {
+  const now = Date.now();
+  const current = loginAttempts.get(ip) || { count: 0, resetAt: now + 15 * 60_000 };
+  if (now > current.resetAt) {
+    loginAttempts.set(ip, { count: 0, resetAt: now + 15 * 60_000 });
+    return true;
+  }
+  return current.count < 8;
+}
+
+function recordFailedLogin(ip) {
+  const current = loginAttempts.get(ip) || { count: 0, resetAt: Date.now() + 15 * 60_000 };
+  current.count += 1;
+  loginAttempts.set(ip, current);
+}
+
+function sameOrigin(req) {
+  const origin = req.get("origin");
+  if (!origin) return true;
+  const forwardedHost = req.get("x-forwarded-host") || req.get("host");
+  return origin === `${req.protocol}://${forwardedHost}`;
+}
+
+app.get("/api/health", (_req, res) => res.json({ ok: true }));
+
+app.get("/api/session", (req, res) => {
+  const session = getSession(req);
+  if (!session) return res.status(401).json({ authenticated: false });
+  res.json({ authenticated: true, username: session.username });
+});
+
+app.post("/api/login", async (req, res) => {
+  if (!sameOrigin(req)) return res.status(403).json({ error: "Yêu cầu không hợp lệ." });
+  if (!checkLoginRate(req.ip)) return res.status(429).json({ error: "Đăng nhập sai quá nhiều lần. Vui lòng thử lại sau." });
+  const username = String(req.body?.username || "");
+  const password = String(req.body?.password || "");
+  const usernameBuffer = Buffer.from(username);
+  const expectedUsernameBuffer = Buffer.from(ADMIN_USERNAME);
+  const usernameMatches = usernameBuffer.length === expectedUsernameBuffer.length && crypto.timingSafeEqual(usernameBuffer, expectedUsernameBuffer);
+  const passwordMatches = await verifyPassword(password);
+  if (!usernameMatches || !passwordMatches) {
+    recordFailedLogin(req.ip);
+    return res.status(401).json({ error: "Tên đăng nhập hoặc mật khẩu không đúng." });
+  }
+  loginAttempts.delete(req.ip);
+  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
+  res.setHeader("Set-Cookie", `asset_session=${createSession(username)}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${SESSION_TTL_SECONDS}${secure}`);
+  res.json({ authenticated: true, username });
+});
+
+app.post("/api/logout", requireAuth, (req, res) => {
+  if (!sameOrigin(req)) return res.status(403).json({ error: "Yêu cầu không hợp lệ." });
+  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
+  res.setHeader("Set-Cookie", `asset_session=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0${secure}`);
+  res.json({ ok: true });
+});
+
+function supabaseConfig() {
+  const url = String(process.env.SUPABASE_URL || "").replace(/\/$/, "");
+  const key = process.env.SUPABASE_ANON_KEY || "";
+  if (!url || !key) throw new Error("Chưa cấu hình SUPABASE_URL và SUPABASE_ANON_KEY trên Render.");
+  return { url, key };
+}
+
+async function supabaseRequest(table, { method = "GET", query = "", body, prefer = "return=representation" } = {}) {
+  const { url, key } = supabaseConfig();
+  const response = await fetch(`${url}/rest/v1/${table}${query}`, {
+    method,
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+      Prefer: prefer,
+    },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  const text = await response.text();
+  let data = null;
+  try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+  if (!response.ok) {
+    const error = new Error(data?.message || `Supabase trả về lỗi ${response.status}`);
+    error.status = response.status;
+    throw error;
+  }
+  return data;
+}
+
+app.use("/api/data", requireAuth, (req, res, next) => {
+  if (!sameOrigin(req)) return res.status(403).json({ error: "Yêu cầu không hợp lệ." });
+  next();
+});
+
+app.get("/api/data/summary", async (_req, res, next) => {
+  try {
+    const [accounts, assets, savings, liabilities, incomes] = await Promise.all([
+      supabaseRequest("asset_accounts", { query: "?select=id,balance,currency,current_exchange_rate,is_included_in_net_worth" }),
+      supabaseRequest("assets", { query: "?select=id,category,quantity,current_price,currency" }),
+      supabaseRequest("savings_deposits", { query: "?select=id,principal,currency,status" }),
+      supabaseRequest("liabilities", { query: "?select=id,current_balance,currency" }),
+      supabaseRequest("recurring_incomes", { query: "?select=id,monthly_amount,is_active" }),
+    ]);
+    const inVnd = (amount, currency, rate) => Number(amount || 0) * (currency === "VND" ? 1 : Number(rate || 1));
+    const accountValue = accounts.filter((x) => x.is_included_in_net_worth).reduce((sum, x) => sum + inVnd(x.balance, x.currency, x.current_exchange_rate), 0);
+    const assetValue = assets.reduce((sum, x) => sum + inVnd(Number(x.quantity) * Number(x.current_price), x.currency), 0);
+    const savingsValue = savings.filter((x) => x.status === "active").reduce((sum, x) => sum + inVnd(x.principal, x.currency), 0);
+    const debt = liabilities.reduce((sum, x) => sum + inVnd(x.current_balance, x.currency), 0);
+    const monthlyIncome = incomes.filter((x) => x.is_active).reduce((sum, x) => sum + Number(x.monthly_amount || 0), 0);
+    res.json({ totalAssets: accountValue + assetValue + savingsValue, debt, netWorth: accountValue + assetValue + savingsValue - debt, monthlyIncome, counts: { accounts: accounts.length, assets: assets.length, savings: savings.length, liabilities: liabilities.length } });
+  } catch (error) { next(error); }
+});
+
+app.get("/api/data/:table", async (req, res, next) => {
+  try {
+    if (!TABLES.has(req.params.table)) return res.status(404).json({ error: "Loại dữ liệu không tồn tại." });
+    const limit = Math.min(Math.max(Number(req.query.limit) || 200, 1), 500);
+    const order = req.params.table === "valuation_snapshots" ? "date.desc" : req.params.table === "asset_transactions" ? "date.desc" : "created_at.desc";
+    res.json(await supabaseRequest(req.params.table, { query: `?select=*&order=${order}&limit=${limit}` }));
+  } catch (error) { next(error); }
+});
+
+app.post("/api/data/:table", async (req, res, next) => {
+  try {
+    const table = req.params.table;
+    if (!TABLES.has(table) || READ_ONLY_TABLES.has(table)) return res.status(405).json({ error: "Không thể thêm loại dữ liệu này." });
+    const body = { ...req.body };
+    delete body.id; delete body.created_at; delete body.updated_at;
+    if ("edited_by" in body || ["asset_accounts", "asset_transactions", "savings_deposits", "liabilities", "recurring_incomes"].includes(table)) body.edited_by = req.session.username;
+    res.status(201).json(await supabaseRequest(table, { method: "POST", body }));
+  } catch (error) { next(error); }
+});
+
+app.patch("/api/data/:table/:id", async (req, res, next) => {
+  try {
+    const table = req.params.table;
+    if (!TABLES.has(table) || READ_ONLY_TABLES.has(table)) return res.status(405).json({ error: "Không thể sửa loại dữ liệu này." });
+    if (!/^[0-9a-f-]{36}$/i.test(req.params.id)) return res.status(400).json({ error: "ID không hợp lệ." });
+    const body = { ...req.body };
+    delete body.id; delete body.created_at;
+    if (table !== "asset_transactions") body.updated_at = new Date().toISOString();
+    if (["asset_accounts", "asset_transactions", "savings_deposits", "liabilities", "recurring_incomes"].includes(table)) body.edited_by = req.session.username;
+    res.json(await supabaseRequest(table, { method: "PATCH", query: `?id=eq.${req.params.id}`, body }));
+  } catch (error) { next(error); }
+});
+
+app.delete("/api/data/:table/:id", async (req, res, next) => {
+  try {
+    const table = req.params.table;
+    if (!TABLES.has(table) || READ_ONLY_TABLES.has(table)) return res.status(405).json({ error: "Không thể xóa loại dữ liệu này." });
+    if (!/^[0-9a-f-]{36}$/i.test(req.params.id)) return res.status(400).json({ error: "ID không hợp lệ." });
+    await supabaseRequest(table, { method: "DELETE", query: `?id=eq.${req.params.id}`, prefer: "return=minimal" });
+    res.status(204).end();
+  } catch (error) { next(error); }
+});
+
+app.use((error, _req, res, _next) => {
+  console.error(error);
+  const status = error.status && error.status >= 400 && error.status < 600 ? error.status : 500;
+  res.status(status).json({ error: error.message || "Có lỗi xảy ra." });
+});
+
+app.listen(PORT, "0.0.0.0", () => console.log(`AssetTracker web đang chạy tại cổng ${PORT}`));

@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#102a43">
+  <title>Quản lý tài sản</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main id="loginView" class="login-shell">
+    <section class="login-card">
+      <div class="brand-mark">AT</div>
+      <p class="eyebrow">ASSET TRACKER</p>
+      <h1>Quản lý tài sản<br>gọn trong một nơi.</h1>
+      <p class="muted">Đăng nhập bằng tài khoản quản trị đã được cấp.</p>
+      <form id="loginForm" class="login-form">
+        <label>Tên đăng nhập<input name="username" autocomplete="username" required autofocus></label>
+        <label>Mật khẩu<input name="password" type="password" autocomplete="current-password" required></label>
+        <p id="loginError" class="form-error" role="alert"></p>
+        <button type="submit" class="primary-button">Đăng nhập</button>
+      </form>
+      <p class="security-note">Không có chức năng đăng ký tài khoản mới.</p>
+    </section>
+  </main>
+
+  <div id="appView" class="app-shell hidden">
+    <aside class="sidebar">
+      <div class="sidebar-brand"><span class="brand-mark small">AT</span><div><strong>AssetTracker</strong><small>Quản lý tài sản</small></div></div>
+      <nav id="nav"></nav>
+      <div class="sidebar-footer">
+        <div class="user-chip"><span id="userInitial">A</span><div><strong id="currentUser">admin</strong><small>Quản trị viên</small></div></div>
+        <button id="logoutButton" class="icon-button" title="Đăng xuất" aria-label="Đăng xuất">↪</button>
+      </div>
+    </aside>
+
+    <section class="content-shell">
+      <header class="topbar">
+        <button id="menuButton" class="menu-button" aria-label="Mở menu">☰</button>
+        <div><p class="eyebrow" id="pageEyebrow">TỔNG QUAN</p><h2 id="pageTitle">Bức tranh tài chính</h2></div>
+        <div id="today" class="date-chip"></div>
+      </header>
+      <main id="content" class="content"></main>
+    </section>
+  </div>
+
+  <div id="modal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <section class="modal-card">
+      <header><div><p class="eyebrow" id="modalEyebrow">CẬP NHẬT</p><h3 id="modalTitle"></h3></div><button id="modalClose" class="icon-button" aria-label="Đóng">×</button></header>
+      <form id="dataForm" class="data-form"></form>
+    </section>
+  </div>
+  <div id="toast" class="toast hidden" role="status"></div>
+  <script src="/app.js" defer></script>
+</body>
+</html>
