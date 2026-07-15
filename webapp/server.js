@@ -239,13 +239,15 @@ async function loadAssetsWithMarketPrices() {
     const snapshot = key ? latest.get(key) : null;
     if (!snapshot || Number(snapshot.buy_price || 0) <= 0) {
       const valuationDate = String(asset.valuation_date || "").slice(0, 10);
-      return { ...asset, price_source: asset.valuation_source || "Nhập tay", price_is_automatic: false, price_is_stale: valuationDate !== today };
+      return { ...asset, stored_current_price: asset.current_price, stored_valuation_date: asset.valuation_date, price_source: asset.valuation_source || "Nhập tay", price_is_automatic: false, price_is_stale: valuationDate !== today };
     }
     const marketPrice = GOLD_CATEGORIES.has(asset.category)
       ? goldPricePerUnit(Number(snapshot.buy_price), asset.unit)
       : Number(snapshot.buy_price);
     return {
       ...asset,
+      stored_current_price: asset.current_price,
+      stored_valuation_date: asset.valuation_date,
       current_price: marketPrice,
       valuation_date: snapshot.fetched_at,
       price_source: snapshot.source,
@@ -253,6 +255,29 @@ async function loadAssetsWithMarketPrices() {
       price_is_stale: String(snapshot.fetched_at).slice(0, 10) !== today,
     };
   });
+}
+
+async function syncMarketPricesToAssets() {
+  const assets = await loadAssetsWithMarketPrices();
+  const changed = assets.filter((asset) => asset.price_is_automatic && (
+    Number(asset.stored_current_price || 0) !== Number(asset.current_price || 0)
+    || String(asset.stored_valuation_date || "").slice(0, 19) !== String(asset.valuation_date || "").slice(0, 19)
+    || asset.valuation_source !== asset.price_source
+  ));
+  const results = await Promise.allSettled(changed.map((asset) => supabaseRequest("assets", {
+    method: "PATCH",
+    query: `?id=eq.${asset.id}`,
+    body: {
+      current_price: asset.current_price,
+      valuation_date: asset.valuation_date,
+      valuation_source: asset.price_source,
+      updated_at: new Date().toISOString(),
+    },
+  })));
+  return {
+    updated: results.filter((result) => result.status === "fulfilled").length,
+    failed: results.filter((result) => result.status === "rejected").length,
+  };
 }
 
 async function optionalTable(table, request) {
@@ -448,8 +473,11 @@ app.post("/api/market/refresh", requireAuth, async (req, res, next) => {
     const results = settled.map((result, index) => result.status === "fulfilled"
       ? { name: names[index], ok: true, ...result.value }
       : { name: names[index], ok: false, error: result.reason?.message || "Không thể cập nhật" });
-    if (results.every((item) => !item.ok)) return res.status(502).json({ error: "Không cập nhật được nguồn giá nào.", results });
-    res.json({ refreshedAt: new Date().toISOString(), results });
+    const syncedAssets = await syncMarketPricesToAssets();
+    if (results.every((item) => !item.ok) && syncedAssets.updated === 0) {
+      return res.status(502).json({ error: "Không cập nhật được nguồn giá nào.", results, syncedAssets });
+    }
+    res.json({ refreshedAt: new Date().toISOString(), results, syncedAssets });
   } catch (error) { next(error); }
 });
 

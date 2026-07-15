@@ -383,7 +383,10 @@ async function refreshMarketPrices(button) {
   try {
     const result = await api("/api/market/refresh", { method: "POST", body: "{}" });
     const failures = result.results.filter((item) => !item.ok).length;
-    toast(failures ? `Đã cập nhật, ${failures} nguồn gặp lỗi.` : "Đã cập nhật giá thị trường mới nhất.", failures > 0);
+    const updated = Number(result.syncedAssets?.updated || 0);
+    const failedAssets = Number(result.syncedAssets?.failed || 0);
+    const detail = updated ? ` Đã đồng bộ ${updated} tài sản.` : "";
+    toast(failures || failedAssets ? `Đã cập nhật.${detail} ${failures} nguồn và ${failedAssets} tài sản gặp lỗi.` : `Đã cập nhật giá thị trường mới nhất.${detail}`, failures > 0 || failedAssets > 0);
     await navigate(state.page);
   } catch (error) {
     toast(error.message, true);
