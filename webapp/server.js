@@ -17,6 +17,7 @@ const TABLES = new Set([
   "savings_deposits",
   "liabilities",
   "recurring_incomes",
+  "monthly_payables",
   "valuation_snapshots",
 ]);
 const READ_ONLY_TABLES = new Set(["valuation_snapshots"]);
@@ -165,7 +166,10 @@ async function supabaseRequest(table, { method = "GET", query = "", body, prefer
   let data = null;
   try { data = text ? JSON.parse(text) : null; } catch { data = text; }
   if (!response.ok) {
-    const error = new Error(data?.message || `Supabase trả về lỗi ${response.status}`);
+    const missingMonthlyPayables = table === "monthly_payables" && response.status === 404;
+    const error = new Error(missingMonthlyPayables
+      ? "Chưa có bảng khoản phải trả. Hãy chạy migration 0011_monthly_payables.sql trên Supabase."
+      : data?.message || `Supabase trả về lỗi ${response.status}`);
     error.status = response.status;
     throw error;
   }
@@ -179,12 +183,20 @@ app.use("/api/data", requireAuth, (req, res, next) => {
 
 app.get("/api/data/summary", async (_req, res, next) => {
   try {
-    const [accounts, assets, savings, liabilities, incomes] = await Promise.all([
+    const optionalTable = async (table, request) => {
+      try { return await supabaseRequest(table, request); }
+      catch (error) {
+        if (error.status === 404) return [];
+        throw error;
+      }
+    };
+    const [accounts, assets, savings, liabilities, incomes, payables] = await Promise.all([
       supabaseRequest("asset_accounts", { query: "?select=id,balance,currency,current_exchange_rate,is_included_in_net_worth" }),
       supabaseRequest("assets", { query: "?select=id,category,quantity,current_price,currency" }),
       supabaseRequest("savings_deposits", { query: "?select=id,principal,currency,status" }),
       supabaseRequest("liabilities", { query: "?select=id,current_balance,currency" }),
       supabaseRequest("recurring_incomes", { query: "?select=id,monthly_amount,is_active" }),
+      optionalTable("monthly_payables", { query: "?select=id,name,category,monthly_amount,currency,due_day,is_active,is_auto_pay&order=due_day.asc" }),
     ]);
     const inVnd = (amount, currency, rate) => Number(amount || 0) * (currency === "VND" ? 1 : Number(rate || 1));
     const accountValue = accounts.filter((x) => x.is_included_in_net_worth).reduce((sum, x) => sum + inVnd(x.balance, x.currency, x.current_exchange_rate), 0);
@@ -192,7 +204,26 @@ app.get("/api/data/summary", async (_req, res, next) => {
     const savingsValue = savings.filter((x) => x.status === "active").reduce((sum, x) => sum + inVnd(x.principal, x.currency), 0);
     const debt = liabilities.reduce((sum, x) => sum + inVnd(x.current_balance, x.currency), 0);
     const monthlyIncome = incomes.filter((x) => x.is_active).reduce((sum, x) => sum + Number(x.monthly_amount || 0), 0);
-    res.json({ totalAssets: accountValue + assetValue + savingsValue, debt, netWorth: accountValue + assetValue + savingsValue - debt, monthlyIncome, counts: { accounts: accounts.length, assets: assets.length, savings: savings.length, liabilities: liabilities.length } });
+    const activePayables = payables.filter((x) => x.is_active);
+    const monthlyPayables = activePayables.reduce((sum, x) => sum + inVnd(x.monthly_amount, x.currency), 0);
+    const totalAssets = accountValue + assetValue + savingsValue;
+    const monthlyCashFlow = monthlyIncome - monthlyPayables;
+    res.json({
+      totalAssets,
+      debt,
+      netWorth: totalAssets - debt,
+      monthlyIncome,
+      monthlyPayables,
+      monthlyCashFlow,
+      savingsRate: monthlyIncome > 0 ? monthlyCashFlow / monthlyIncome * 100 : 0,
+      debtToAssets: totalAssets > 0 ? debt / totalAssets * 100 : 0,
+      allocation: { accounts: accountValue, investments: assetValue, savings: savingsValue },
+      upcomingPayables: activePayables.sort((a, b) => {
+        const today = new Date().getDate();
+        return ((a.due_day - today + 31) % 31) - ((b.due_day - today + 31) % 31);
+      }).slice(0, 6),
+      counts: { accounts: accounts.length, assets: assets.length, savings: savings.length, liabilities: liabilities.length, payables: payables.length },
+    });
   } catch (error) { next(error); }
 });
 
@@ -211,7 +242,7 @@ app.post("/api/data/:table", async (req, res, next) => {
     if (!TABLES.has(table) || READ_ONLY_TABLES.has(table)) return res.status(405).json({ error: "Không thể thêm loại dữ liệu này." });
     const body = { ...req.body };
     delete body.id; delete body.created_at; delete body.updated_at;
-    if ("edited_by" in body || ["asset_accounts", "asset_transactions", "savings_deposits", "liabilities", "recurring_incomes"].includes(table)) body.edited_by = req.session.username;
+    if ("edited_by" in body || ["asset_accounts", "asset_transactions", "savings_deposits", "liabilities", "recurring_incomes", "monthly_payables"].includes(table)) body.edited_by = req.session.username;
     res.status(201).json(await supabaseRequest(table, { method: "POST", body }));
   } catch (error) { next(error); }
 });
@@ -224,7 +255,7 @@ app.patch("/api/data/:table/:id", async (req, res, next) => {
     const body = { ...req.body };
     delete body.id; delete body.created_at;
     if (table !== "asset_transactions") body.updated_at = new Date().toISOString();
-    if (["asset_accounts", "asset_transactions", "savings_deposits", "liabilities", "recurring_incomes"].includes(table)) body.edited_by = req.session.username;
+    if (["asset_accounts", "asset_transactions", "savings_deposits", "liabilities", "recurring_incomes", "monthly_payables"].includes(table)) body.edited_by = req.session.username;
     res.json(await supabaseRequest(table, { method: "PATCH", query: `?id=eq.${req.params.id}`, body }));
   } catch (error) { next(error); }
 });

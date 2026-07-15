@@ -8,6 +8,7 @@ const options = {
   unit: [["share", "Cổ phiếu / CCQ"], ["luong", "Lượng"], ["cay", "Cây"], ["chi", "Chỉ"], ["phan", "Phân"], ["gram", "Gram"], ["ounce", "Ounce"], ["item", "Tài sản"]],
   liabilityType: [["mortgage_loan", "Vay mua nhà"], ["car_loan", "Vay mua xe"], ["consumer_loan", "Vay tiêu dùng"], ["unsecured_loan", "Vay tín chấp"], ["family_loan", "Vay người thân"], ["installment_plan", "Trả góp"], ["credit_card", "Thẻ tín dụng"], ["other_payable", "Khoản phải trả khác"]],
   transactionType: [["deposit", "Nạp tiền"], ["withdrawal", "Rút tiền"], ["transfer", "Chuyển tiền"], ["buy", "Mua"], ["sell", "Bán"], ["interest", "Tiền lãi"], ["dividend", "Cổ tức"], ["maturity", "Tất toán"], ["repayment", "Trả nợ"], ["fee", "Phí"], ["tax", "Thuế"], ["adjustment", "Điều chỉnh"]],
+  payableCategory: [["loan_interest", "Lãi vay"], ["loan_payment", "Khoản trả vay"], ["rent", "Tiền thuê nhà"], ["credit_card", "Thẻ tín dụng"], ["utilities", "Điện, nước, internet"], ["insurance", "Bảo hiểm"], ["tax", "Thuế, phí"], ["family", "Chi phí gia đình"], ["subscription", "Dịch vụ đăng ký"], ["other", "Khoản khác"]],
 };
 
 const pages = {
@@ -36,6 +37,11 @@ const pages = {
     label: "Thu nhập", icon: "+", title: "Thu nhập định kỳ", eyebrow: "DÒNG TIỀN", singular: "nguồn thu",
     columns: [["name", "Nguồn thu"], ["monthly_amount", "Mỗi tháng", "money"], ["day_of_month", "Ngày nhận"], ["start_date", "Bắt đầu", "date"], ["end_date", "Kết thúc", "date"], ["is_active", "Hoạt động", "boolean"]],
     fields: [["name", "Tên nguồn thu", "text", true], ["monthly_amount", "Số tiền hàng tháng", "number", true], ["day_of_month", "Ngày nhận trong tháng", "number", true, null, 1], ["start_date", "Ngày bắt đầu", "date", true], ["end_date", "Ngày kết thúc", "date"], ["is_active", "Đang hoạt động", "checkbox", false, null, true], ["note", "Ghi chú", "textarea"]],
+  },
+  monthly_payables: {
+    label: "Phải trả tháng", icon: "₫", title: "Khoản phải trả hàng tháng", eyebrow: "DÒNG TIỀN RA", singular: "khoản phải trả",
+    columns: [["name", "Khoản phải trả"], ["category", "Phân loại", "payableCategory"], ["monthly_amount", "Mỗi tháng", "money"], ["due_day", "Ngày đến hạn"], ["is_auto_pay", "Tự động", "boolean"], ["is_active", "Hoạt động", "boolean"]],
+    fields: [["name", "Tên khoản phải trả", "text", true], ["category", "Phân loại", "select", true, "payableCategory", "other"], ["monthly_amount", "Số tiền hàng tháng", "number", true], ["currency", "Tiền tệ", "select", true, "currency", "VND"], ["due_day", "Ngày đến hạn trong tháng", "number", true, null, 1], ["start_date", "Ngày bắt đầu", "date", true], ["end_date", "Ngày kết thúc", "date"], ["is_auto_pay", "Đã cài thanh toán tự động", "checkbox", false, null, false], ["is_active", "Đang theo dõi", "checkbox", false, null, true], ["note", "Ghi chú", "textarea"]],
   },
   asset_transactions: {
     label: "Giao dịch", icon: "⇄", title: "Lịch sử giao dịch", eyebrow: "DÒNG TIỀN", singular: "giao dịch",
@@ -117,27 +123,40 @@ async function navigate(pageKey) {
 
 async function renderDashboard() {
   const data = await api("/api/data/summary");
-  const parts = [
-    ["Tài khoản tiền", data.counts.accounts], ["Tài sản đầu tư", data.counts.assets],
-    ["Sổ tiết kiệm", data.counts.savings], ["Khoản nợ", data.counts.liabilities],
+  const allocation = [
+    ["Tiền & tài khoản", data.allocation.accounts], ["Đầu tư & tài sản", data.allocation.investments],
+    ["Tiết kiệm", data.allocation.savings],
   ];
-  const totalCount = parts.reduce((sum, [, value]) => sum + value, 0) || 1;
+  const allocationTotal = allocation.reduce((sum, [, value]) => sum + value, 0) || 1;
+  const cashFlowPositive = data.monthlyCashFlow >= 0;
   $("#content").innerHTML = `
     <section class="summary-grid">
       <article class="summary-card accent"><span>TÀI SẢN RÒNG</span><strong>${money(data.netWorth)}</strong></article>
       <article class="summary-card"><span>TỔNG TÀI SẢN</span><strong>${money(data.totalAssets)}</strong></article>
       <article class="summary-card"><span>TỔNG DƯ NỢ</span><strong>${money(data.debt)}</strong></article>
       <article class="summary-card"><span>THU NHẬP / THÁNG</span><strong>${money(data.monthlyIncome)}</strong></article>
+      <article class="summary-card outgoing"><span>PHẢI TRẢ / THÁNG</span><strong>${money(data.monthlyPayables)}</strong></article>
+      <article class="summary-card ${cashFlowPositive ? "positive" : "negative"}"><span>DÒNG TIỀN RÒNG</span><strong>${cashFlowPositive ? "+" : ""}${money(data.monthlyCashFlow)}</strong></article>
     </section>
     <section class="dashboard-grid">
-      <article class="panel"><div class="panel-header"><h3>Cơ cấu danh mục</h3><span class="muted">Theo số lượng bản ghi</span></div>
-        ${parts.map(([label, value]) => `<div class="allocation-row"><span>${label}</span><div class="bar"><i style="width:${value / totalCount * 100}%"></i></div><strong>${value}</strong></div>`).join("")}
+      <article class="panel"><div class="panel-header"><h3>Cơ cấu tài sản</h3><span class="muted">Theo giá trị hiện tại</span></div>
+        ${allocation.map(([label, value]) => `<div class="allocation-row value"><span>${label}</span><div class="bar"><i style="width:${value / allocationTotal * 100}%"></i></div><strong>${(value / allocationTotal * 100).toFixed(1)}%</strong></div>`).join("")}
       </article>
-      <article class="panel"><div class="panel-header"><h3>Tóm tắt nhanh</h3></div><div class="quick-stats">
-        <div class="quick-stat"><span>Tỷ lệ nợ / tài sản</span><strong>${data.totalAssets ? (data.debt / data.totalAssets * 100).toFixed(1) : "0.0"}%</strong></div>
-        <div class="quick-stat"><span>Tổng mục đang quản lý</span><strong>${parts.reduce((sum, [, value]) => sum + value, 0)}</strong></div>
-        <div class="quick-stat"><span>Trạng thái dữ liệu</span><strong>Đã đồng bộ</strong></div>
+      <article class="panel"><div class="panel-header"><h3>Sức khỏe tài chính</h3></div><div class="quick-stats">
+        <div class="quick-stat"><span>Tỷ lệ tiết kiệm</span><strong class="${data.savingsRate >= 20 ? "good" : "warn"}">${data.savingsRate.toFixed(1)}%</strong></div>
+        <div class="quick-stat"><span>Tỷ lệ nợ / tài sản</span><strong class="${data.debtToAssets <= 50 ? "good" : "warn"}">${data.debtToAssets.toFixed(1)}%</strong></div>
+        <div class="quick-stat"><span>Phải trả / thu nhập</span><strong>${data.monthlyIncome ? (data.monthlyPayables / data.monthlyIncome * 100).toFixed(1) : "0.0"}%</strong></div>
+        <div class="quick-stat"><span>Trạng thái dòng tiền</span><strong class="${cashFlowPositive ? "good" : "bad"}">${cashFlowPositive ? "Dương" : "Âm"}</strong></div>
       </div></article>
+      <article class="panel cash-flow-panel"><div class="panel-header"><h3>Dòng tiền hàng tháng</h3><span class="muted">Thu nhập định kỳ và khoản phải trả</span></div>
+        <div class="cash-flow-visual">
+          <div><span>Tiền vào</span><strong>${money(data.monthlyIncome)}</strong><i class="income" style="width:100%"></i></div>
+          <div><span>Tiền ra</span><strong>${money(data.monthlyPayables)}</strong><i class="expense" style="width:${data.monthlyIncome ? Math.min(data.monthlyPayables / data.monthlyIncome * 100, 100) : (data.monthlyPayables ? 100 : 0)}%"></i></div>
+        </div>
+      </article>
+      <article class="panel"><div class="panel-header"><h3>Sắp đến hạn hàng tháng</h3><button class="secondary-button" data-page="monthly_payables">Quản lý</button></div>
+        <div class="due-list">${data.upcomingPayables.length ? data.upcomingPayables.map((item) => `<div class="due-item"><span class="due-day">${item.due_day}</span><div><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(optionLabel("payableCategory", item.category))}${item.is_auto_pay ? " · Tự động" : ""}</small></div><b>${money(item.monthly_amount, item.currency)}</b></div>`).join("") : '<div class="empty-compact">Chưa có khoản phải trả định kỳ.</div>'}</div>
+      </article>
     </section>`;
 }
 
@@ -154,6 +173,7 @@ function fieldOptions(source) {
 }
 
 function inputValue(record, name, fallback, type) {
+  if (!record && type === "date" && name === "start_date" && fallback === undefined) return new Date().toISOString().slice(0, 10);
   const value = record?.[name] ?? fallback ?? "";
   if (type === "datetime-local" && value) return new Date(value).toISOString().slice(0, 16);
   return value;

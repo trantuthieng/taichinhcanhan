@@ -25,6 +25,18 @@ Mở `http://localhost:3000` và đăng nhập bằng tài khoản quản trị 
    - `SUPABASE_ANON_KEY`: anon key của project Supabase.
 4. Chọn **Apply**. Health check dùng đường dẫn `/api/health`.
 
+## Cập nhật cơ sở dữ liệu
+
+Phân hệ khoản phải trả hàng tháng cần migration:
+
+```powershell
+supabase db push
+```
+
+Hoặc mở **Supabase Dashboard > SQL Editor**, dán nội dung file
+`supabase/migrations/0011_monthly_payables.sql` và chọn **Run**. Dashboard vẫn hoạt động
+nếu chưa có bảng mới, nhưng màn hình **Phải trả tháng** chỉ sử dụng được sau khi chạy migration.
+
 `SESSION_SECRET` được Render tự sinh. Tên đăng nhập mặc định là `admin`; mật khẩu mặc định được lưu dưới dạng scrypt hash, không nằm ở dạng rõ trong mã nguồn.
 
 ## Đổi mật khẩu quản trị
@@ -40,6 +52,8 @@ Thêm biến môi trường `ADMIN_PASSWORD_HASH` trên Render với kết quả
 ## Phạm vi
 
 - Dashboard tổng tài sản, dư nợ, tài sản ròng và thu nhập tháng.
+- Theo dõi khoản phải trả hàng tháng: lãi/vay, tiền thuê nhà, thẻ tín dụng, hóa đơn, bảo hiểm và các khoản khác.
+- Thống kê dòng tiền vào–ra, dòng tiền ròng, tỷ lệ tiết kiệm, tỷ lệ nợ/tài sản và lịch đến hạn.
 - Thêm/sửa/xóa tài khoản tiền, tài sản, sổ tiết kiệm, nợ, thu nhập định kỳ và giao dịch.
 - Phiên đăng nhập ký HMAC, cookie `HttpOnly`, `SameSite=Strict`, tự hết hạn sau 12 giờ.
 - Giới hạn thử sai mật khẩu và kiểm tra same-origin cho các request thay đổi dữ liệu.
