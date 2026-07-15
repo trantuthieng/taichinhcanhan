@@ -265,11 +265,11 @@ async function optionalTable(table, request) {
 
 async function buildFinancialSummary() {
   const [accounts, assets, savings, liabilities, incomes, payables, repayments] = await Promise.all([
-    supabaseRequest("asset_accounts", { query: "?select=id,balance,currency,current_exchange_rate,is_included_in_net_worth" }),
+    supabaseRequest("asset_accounts", { query: "?select=id,name,balance,currency,current_exchange_rate,is_included_in_net_worth" }),
     loadAssetsWithMarketPrices(),
-    supabaseRequest("savings_deposits", { query: "?select=id,principal,currency,status" }),
+    supabaseRequest("savings_deposits", { query: "?select=*&order=maturity_date.asc" }),
     supabaseRequest("liabilities", { query: "?select=id,name,liability_type,original_principal,current_balance,currency,annual_interest_rate,start_date,next_payment_date,monthly_payment,repayment_method,term_in_months,min_payment_rate,min_payment_fixed_amount" }),
-    supabaseRequest("recurring_incomes", { query: "?select=id,monthly_amount,is_active" }),
+    supabaseRequest("recurring_incomes", { query: "?select=id,name,monthly_amount,is_active" }),
     optionalTable("monthly_payables", { query: "?select=id,name,category,monthly_amount,currency,due_day,is_active,is_auto_pay,liability_id&order=due_day.asc" }),
     supabaseRequest("asset_transactions", { query: "?select=liability_id&type=eq.repayment" }),
   ]);
@@ -295,12 +295,61 @@ async function buildFinancialSummary() {
   const totalAssets = accountValue + assetValue + savingsValue;
   const monthlyCashFlow = monthlyIncome - monthlyPayables;
   const staleAssetCount = assets.filter((x) => x.price_is_stale).length;
+  const assetGroups = [
+    { key: "realEstate", label: "Bất động sản", categories: ["real_estate", "rental_asset"] },
+    { key: "securities", label: "Chứng khoán", categories: ["stock", "etf", "listed_bond", "warrant", "foreign_stock", "other_security"] },
+    { key: "gold", label: "Vàng", categories: [...GOLD_CATEGORIES] },
+    { key: "funds", label: "Quỹ", categories: [...FUND_CATEGORIES] },
+  ];
+  const assetBreakdown = assetGroups.map((group) => ({
+    key: group.key, label: group.label,
+    value: assets.filter((x) => group.categories.includes(x.category)).reduce((sum, x) => sum + inVnd(Number(x.quantity) * Number(x.current_price), x.currency), 0),
+    count: assets.filter((x) => group.categories.includes(x.category)).length,
+  }));
+  assetBreakdown.unshift({ key: "cash", label: "Tiền & tài khoản", value: accountValue, count: accounts.length });
+  assetBreakdown.push({ key: "savings", label: "Tiết kiệm", value: savingsValue, count: savings.filter((x) => x.status === "active").length });
+  const debtByType = new Map();
+  for (const item of liabilities) {
+    const current = debtByType.get(item.liability_type) || { type: item.liability_type, value: 0, count: 0 };
+    current.value += inVnd(item.current_balance, item.currency);
+    current.count += 1;
+    debtByType.set(item.liability_type, current);
+  }
+  const debtBreakdown = [...debtByType.values()].sort((a, b) => b.value - a.value);
+  const topAssets = assets.map((item) => ({
+    id: item.id, name: item.name, category: item.category,
+    value: inVnd(Number(item.quantity) * Number(item.current_price), item.currency),
+    valuationDate: item.valuation_date, priceSource: item.price_source,
+  })).sort((a, b) => b.value - a.value).slice(0, 6);
+  const topDebts = liabilities.map((item) => ({
+    id: item.id, name: item.name, type: item.liability_type,
+    balance: inVnd(item.current_balance, item.currency),
+    monthlyPayment: automaticDebtPayables.find((x) => x.id === item.id)?.estimated_payment || 0,
+    nextPaymentDate: item.next_payment_date,
+  })).sort((a, b) => b.balance - a.balance).slice(0, 5);
+  const upcomingSavings = savings.filter((x) => x.status === "active" && x.maturity_date).map((item) => ({
+    id: item.id, name: item.name, principal: inVnd(item.principal, item.currency),
+    interest: inVnd(item.current_interest || 0, item.currency), maturityDate: item.maturity_date,
+    annualRate: Number(item.annual_interest_rate || 0),
+  })).sort((a, b) => String(a.maturityDate).localeCompare(String(b.maturityDate))).slice(0, 6);
+  const expenseMap = new Map();
+  for (const item of activePayables) expenseMap.set(item.category, (expenseMap.get(item.category) || 0) + inVnd(item.monthly_amount, item.currency));
+  if (monthlyDebtPayments > 0) expenseMap.set("loan_payment", (expenseMap.get("loan_payment") || 0) + monthlyDebtPayments);
+  const expenseBreakdown = [...expenseMap.entries()].map(([category, value]) => ({ category, value })).sort((a, b) => b.value - a.value);
+  const incomeSources = incomes.filter((x) => x.is_active).map((x) => ({ name: x.name, value: Number(x.monthly_amount || 0) })).sort((a, b) => b.value - a.value);
+  const liquidAssets = accountValue + savingsValue;
   return {
     asOfDate: new Date().toISOString(), totalAssets, debt, netWorth: totalAssets - debt,
     monthlyIncome, monthlyPayables, monthlyRecurringPayables, monthlyDebtPayments, monthlyCashFlow,
     savingsRate: monthlyIncome > 0 ? monthlyCashFlow / monthlyIncome * 100 : 0,
     debtToAssets: totalAssets > 0 ? debt / totalAssets * 100 : 0,
     allocation: { accounts: accountValue, investments: assetValue, savings: savingsValue },
+    assetBreakdown, debtBreakdown, topAssets, topDebts, upcomingSavings, expenseBreakdown, incomeSources,
+    liquidAssets,
+    savingsInterest: savings.filter((x) => x.status === "active").reduce((sum, x) => sum + inVnd(x.current_interest || 0, x.currency), 0),
+    emergencyMonths: monthlyPayables > 0 ? liquidAssets / monthlyPayables : null,
+    debtServiceRatio: monthlyIncome > 0 ? monthlyDebtPayments / monthlyIncome * 100 : 0,
+    cashFlowMargin: monthlyIncome > 0 ? monthlyCashFlow / monthlyIncome * 100 : 0,
     staleAssetCount,
     upcomingPayables: activePayables.concat(automaticDebtPayables.map((x) => ({
       id: `debt-${x.id}`, name: x.name,

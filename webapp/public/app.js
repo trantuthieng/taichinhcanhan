@@ -149,11 +149,8 @@ async function navigate(pageKey) {
 
 async function renderDashboard() {
   const data = await api("/api/data/summary");
-  const allocation = [
-    ["Tiền & tài khoản", data.allocation.accounts], ["Đầu tư & tài sản", data.allocation.investments],
-    ["Tiết kiệm", data.allocation.savings],
-  ];
-  const allocationTotal = allocation.reduce((sum, [, value]) => sum + value, 0) || 1;
+  const allocation = data.assetBreakdown || [];
+  const allocationTotal = allocation.reduce((sum, item) => sum + item.value, 0) || 1;
   const cashFlowPositive = data.monthlyCashFlow >= 0;
   $("#content").innerHTML = `
     ${data.staleAssetCount ? `<div class="freshness-alert"><strong>${data.staleAssetCount} tài sản chưa có giá cập nhật hôm nay.</strong><span>Giá thị trường được tự động lấy khi có nguồn; bất động sản cần cập nhật định giá thủ công.</span></div>` : `<div class="freshness-alert fresh"><strong>Dữ liệu giá đã cập nhật đến hôm nay.</strong><span>Thời điểm báo cáo: ${new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" }).format(new Date(data.asOfDate))}</span></div>`}
@@ -167,12 +164,16 @@ async function renderDashboard() {
     </section>
     <section class="dashboard-grid">
       <article class="panel"><div class="panel-header"><h3>Cơ cấu tài sản</h3><span class="muted">Theo giá trị hiện tại</span></div>
-        ${allocation.map(([label, value]) => `<div class="allocation-row value"><span>${label}</span><div class="bar"><i style="width:${value / allocationTotal * 100}%"></i></div><strong>${(value / allocationTotal * 100).toFixed(1)}%</strong></div>`).join("")}
+        ${allocation.map((item) => `<div class="allocation-row value"><span>${item.label}<small>${item.count} mục</small></span><div class="bar"><i style="width:${item.value / allocationTotal * 100}%"></i></div><strong>${(item.value / allocationTotal * 100).toFixed(1)}%</strong></div>`).join("")}
       </article>
       <article class="panel"><div class="panel-header"><h3>Sức khỏe tài chính</h3></div><div class="quick-stats">
         <div class="quick-stat"><span>Tỷ lệ tiết kiệm</span><strong class="${data.savingsRate >= 20 ? "good" : "warn"}">${data.savingsRate.toFixed(1)}%</strong></div>
         <div class="quick-stat"><span>Tỷ lệ nợ / tài sản</span><strong class="${data.debtToAssets <= 50 ? "good" : "warn"}">${data.debtToAssets.toFixed(1)}%</strong></div>
         <div class="quick-stat"><span>Phải trả / thu nhập</span><strong>${data.monthlyIncome ? (data.monthlyPayables / data.monthlyIncome * 100).toFixed(1) : "0.0"}%</strong></div>
+        <div class="quick-stat"><span>Tỷ lệ trả nợ / thu nhập</span><strong class="${data.debtServiceRatio <= 40 ? "good" : "bad"}">${data.debtServiceRatio.toFixed(1)}%</strong></div>
+        <div class="quick-stat"><span>Tài sản thanh khoản</span><strong>${money(data.liquidAssets)}</strong></div>
+        <div class="quick-stat"><span>Khả năng dự phòng</span><strong class="${data.emergencyMonths === null || data.emergencyMonths >= 6 ? "good" : "warn"}">${data.emergencyMonths === null ? "Không giới hạn" : `${data.emergencyMonths.toFixed(1)} tháng`}</strong></div>
+        <div class="quick-stat"><span>Lãi tiết kiệm dự kiến</span><strong>${money(data.savingsInterest)}</strong></div>
         <div class="quick-stat"><span>Trả nợ & trả góp / tháng</span><strong>${money(data.monthlyDebtPayments)}</strong></div>
         <div class="quick-stat"><span>Trạng thái dòng tiền</span><strong class="${cashFlowPositive ? "good" : "bad"}">${cashFlowPositive ? "Dương" : "Âm"}</strong></div>
       </div></article>
@@ -185,6 +186,23 @@ async function renderDashboard() {
       </article>
       <article class="panel"><div class="panel-header"><h3>Sắp đến hạn hàng tháng</h3><button class="secondary-button" data-page="monthly_payables">Quản lý</button></div>
         <div class="due-list">${data.upcomingPayables.length ? data.upcomingPayables.map((item) => `<div class="due-item"><span class="due-day">${item.due_day}</span><div><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(optionLabel("payableCategory", item.category))}${item.source === "liability" ? " · Tự động từ khoản nợ" : item.is_auto_pay ? " · Thanh toán tự động" : ""}</small></div><b>${money(item.monthly_amount, item.currency)}</b></div>`).join("") : '<div class="empty-compact">Chưa có khoản phải trả định kỳ.</div>'}</div>
+      </article>
+    </section>
+    <section class="dashboard-detail-grid">
+      <article class="panel"><div class="panel-header"><h3>Tài sản giá trị lớn</h3><span class="muted">Top ${data.topAssets.length}</span></div>
+        <div class="rank-list">${data.topAssets.length ? data.topAssets.map((item, index) => `<div class="rank-item"><span class="rank">${index + 1}</span><div><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(optionLabel("assetCategory", item.category))} · ${escapeHtml(item.priceSource || "Nhập tay")}</small></div><b>${money(item.value)}</b></div>`).join("") : '<div class="empty-compact">Chưa có tài sản.</div>'}</div>
+      </article>
+      <article class="panel"><div class="panel-header"><h3>Cơ cấu dư nợ</h3><span class="muted">${money(data.debt)}</span></div>
+        <div class="breakdown-list">${data.debtBreakdown.length ? data.debtBreakdown.map((item) => `<div><span>${escapeHtml(optionLabel("liabilityType", item.type))}<small>${item.count} khoản</small></span><strong>${money(item.value)}</strong></div>`).join("") : '<div class="empty-compact">Không có dư nợ.</div>'}</div>
+        ${data.topDebts.length ? `<div class="subsection-title">Khoản nợ lớn nhất</div>${data.topDebts.map((item) => `<div class="debt-detail"><span>${escapeHtml(item.name)}${item.nextPaymentDate ? `<small>Kỳ tới ${escapeHtml(formatCell({ x: item.nextPaymentDate }, ["x", "", "date"]))}</small>` : ""}</span><div><strong>${money(item.balance)}</strong>${item.monthlyPayment ? `<small>Trả ${money(item.monthlyPayment)}/tháng</small>` : ""}</div></div>`).join("")}` : ""}
+      </article>
+      <article class="panel"><div class="panel-header"><h3>Nguồn thu hàng tháng</h3><span class="muted">${money(data.monthlyIncome)}</span></div>
+        <div class="breakdown-list">${data.incomeSources.length ? data.incomeSources.map((item) => `<div><span>${escapeHtml(item.name)}</span><strong>${money(item.value)}</strong></div>`).join("") : '<div class="empty-compact">Chưa khai báo nguồn thu.</div>'}</div>
+        <div class="subsection-title">Cơ cấu phải chi</div>
+        <div class="breakdown-list">${data.expenseBreakdown.length ? data.expenseBreakdown.map((item) => `<div><span>${escapeHtml(optionLabel("payableCategory", item.category))}</span><strong>${money(item.value)}</strong></div>`).join("") : '<div class="empty-compact">Chưa có khoản phải chi.</div>'}</div>
+      </article>
+      <article class="panel"><div class="panel-header"><h3>Tiết kiệm sắp đáo hạn</h3><button class="secondary-button" data-page="savings_deposits">Xem tất cả</button></div>
+        <div class="maturity-list">${data.upcomingSavings.length ? data.upcomingSavings.map((item) => `<div class="maturity-item"><div><strong>${escapeHtml(item.name)}</strong><small>${item.annualRate.toFixed(2)}%/năm · Lãi ${money(item.interest)}</small></div><div><b>${money(item.principal)}</b><small>${escapeHtml(formatCell({ x: item.maturityDate }, ["x", "", "date"]))}</small></div></div>`).join("") : '<div class="empty-compact">Không có sổ sắp đáo hạn.</div>'}</div>
       </article>
     </section>
     <section class="panel ai-panel">
