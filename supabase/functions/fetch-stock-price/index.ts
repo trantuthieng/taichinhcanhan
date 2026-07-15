@@ -13,6 +13,11 @@ import { filterChangedSnapshots } from "../_shared/dedupe.ts";
 
 const DNSE_ORIGIN = "https://openapi.dnse.com.vn";
 const VND_QUOTE_MULTIPLIER = 1000;
+const DNSE_REQUEST_TIMEOUT_MS = 12_000;
+
+export function latestTradePath(symbol: string) {
+  return `/price/${encodeURIComponent(symbol)}/trades/latest?boardId=G1`;
+}
 
 type DnseTrade = { symbol?: string; matchPrice?: number; time?: string };
 export function parseLatestTrade(
@@ -63,10 +68,13 @@ if (import.meta.main) {
       const snapshots: NonNullable<ReturnType<typeof parseLatestTrade>>[] = [];
       const failures: { symbol: string; status?: number; error: string }[] = [];
       await Promise.all(symbols.map(async (symbol) => {
-        const path = `/price/${encodeURIComponent(symbol)}/trades/latest`;
+        const path = latestTradePath(symbol);
         try {
           const headers = await signDnseRequest("GET", path);
-          const response = await fetch(`${DNSE_ORIGIN}${path}`, { headers });
+          const response = await fetch(`${DNSE_ORIGIN}${path}`, {
+            headers,
+            signal: AbortSignal.timeout(DNSE_REQUEST_TIMEOUT_MS),
+          });
           if (!response.ok) {
             failures.push({
               symbol,

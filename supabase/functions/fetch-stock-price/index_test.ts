@@ -1,5 +1,12 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { parseLatestTrade } from "./index.ts";
+import { latestTradePath, parseLatestTrade } from "./index.ts";
+
+Deno.test("builds the verified DNSE latest-trade path with board id", () => {
+  assertEquals(
+    latestTradePath("MBB"),
+    "/price/MBB/trades/latest?boardId=G1",
+  );
+});
 
 Deno.test("parses verified DNSE latest trade response into VND", () => {
   assertEquals(
