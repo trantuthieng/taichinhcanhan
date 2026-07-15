@@ -385,8 +385,10 @@ async function refreshMarketPrices(button) {
     const failures = result.results.filter((item) => !item.ok).length;
     const updated = Number(result.syncedAssets?.updated || 0);
     const failedAssets = Number(result.syncedAssets?.failed || 0);
+    const available = Number(result.syncedAssets?.available || 0);
     const detail = updated ? ` Đã đồng bộ ${updated} tài sản.` : "";
-    toast(failures || failedAssets ? `Đã cập nhật.${detail} ${failures} nguồn và ${failedAssets} tài sản gặp lỗi.` : `Đã cập nhật giá thị trường mới nhất.${detail}`, failures > 0 || failedAssets > 0);
+    const fallback = result.refreshStatus === "cached" ? ` Đang dùng giá gần nhất của ${available} tài sản.` : "";
+    toast(failures || failedAssets ? `Đã cập nhật một phần.${detail}${fallback} ${failures} nguồn và ${failedAssets} tài sản gặp lỗi.` : `Đã cập nhật giá thị trường mới nhất.${detail}`, failures > 0 || failedAssets > 0);
     await navigate(state.page);
   } catch (error) {
     toast(error.message, true);

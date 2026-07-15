@@ -277,6 +277,8 @@ async function syncMarketPricesToAssets() {
   return {
     updated: results.filter((result) => result.status === "fulfilled").length,
     failed: results.filter((result) => result.status === "rejected").length,
+    available: assets.filter((asset) => asset.price_is_automatic).length,
+    fresh: assets.filter((asset) => asset.price_is_automatic && !asset.price_is_stale).length,
   };
 }
 
@@ -474,10 +476,11 @@ app.post("/api/market/refresh", requireAuth, async (req, res, next) => {
       ? { name: names[index], ok: true, ...result.value }
       : { name: names[index], ok: false, error: result.reason?.message || "Không thể cập nhật" });
     const syncedAssets = await syncMarketPricesToAssets();
-    if (results.every((item) => !item.ok) && syncedAssets.updated === 0) {
+    if (results.every((item) => !item.ok) && syncedAssets.available === 0) {
       return res.status(502).json({ error: "Không cập nhật được nguồn giá nào.", results, syncedAssets });
     }
-    res.json({ refreshedAt: new Date().toISOString(), results, syncedAssets });
+    const refreshStatus = results.every((item) => item.ok) ? "complete" : results.some((item) => item.ok) ? "partial" : "cached";
+    res.json({ refreshedAt: new Date().toISOString(), refreshStatus, results, syncedAssets });
   } catch (error) { next(error); }
 });
 
