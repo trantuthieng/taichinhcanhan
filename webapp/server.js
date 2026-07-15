@@ -495,7 +495,7 @@ app.post("/api/ai/analysis", requireAuth, async (req, res, next) => {
       method: "POST",
       headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "content-type": "application/json" },
       body: JSON.stringify({
-        model, max_tokens: 1000, temperature: 0.2,
+        model, max_tokens: 1000,
         system: "Bạn là chuyên gia lập kế hoạch tài chính cá nhân thận trọng. Chỉ sử dụng số liệu được cung cấp; mọi chiến lược phải có lý do định lượng và cảnh báo đây là phân tích tham khảo.",
         messages: [{ role: "user", content: prompt }],
       }),
